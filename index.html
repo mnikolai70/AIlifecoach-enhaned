@@ -9,14 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Firebase App and Auth Compat SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<!-- FirebaseUI CDN -->
-<script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
-<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
-
 <style>
   :root{
     --paper:#FFFFFF;
@@ -297,7 +289,8 @@
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
         <button id="btn-el" onclick="setLang('el')">ΕΛ</button>
       </div>
-      <a href="#demo" class="cta-btn i18n" data-en="Free demo" data-el="Δωρεάν demo">Free demo</a>
+      <a href="#" class="cta-btn i18n" data-en="Sign in / Sign up" data-el="Σύνδεση / Εγγραφή"
+         onclick="event.preventDefault(); window.open('signin.html', 'signin', 'width=480,height=680,noopener');">Sign in / Sign up</a>
     </div>
   </div>
 </header>
@@ -605,41 +598,14 @@
         </p>
         <span class="demo-hint mono i18n" data-en="↘ Look for the icon in the bottom-right corner" data-el="↘ Δείτε το εικονίδιο πανω δεξιά">↘ Look for the icon in the top-right corner</span>
       </div>
-      <a href="#programs" class="cta-btn i18n" data-en="Or explore the programs" data-el="Ή δείτε τα προγράμματα">Or explore the programs</a>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <a href="#" class="cta-btn i18n" data-en="Sign in / Sign up" data-el="Σύνδεση / Εγγραφή"
+           onclick="event.preventDefault(); window.open('signin.html', 'signin', 'width=480,height=680,noopener');">Sign in / Sign up</a>
+        <a href="#programs" class="cta-btn ghost i18n" data-en="Or explore the programs" data-el="Ή δείτε τα προγράμματα">Or explore the programs</a>
+      </div>
     </div>
-
-    <!-- Firebase sign-in widget: shown to signed-out visitors before they can access the demo -->
-    <div id="firebaseui-auth-container"></div>
   </div>
 </section>
-
-<script>
-  var firebaseConfig = {
-    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
-    authDomain: "lifecoach-authentication.firebaseapp.com",
-    projectId: "lifecoach-authentication",
-    storageBucket: "lifecoach-authentication.firebasestorage.app",
-    messagingSenderId: "937227852104",
-    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
-    measurementId: "G-DSKHMB7D5S"
-  };
-  firebase.initializeApp(firebaseConfig);
-
-  // Initialize the FirebaseUI Widget using Firebase
-  var ui = new firebaseui.auth.AuthUI(firebase.auth());
-  var uiConfig = {
-    signInSuccessUrl: '/dashboard.html', // Where to redirect on success
-    signInOptions: [
-      firebase.auth.EmailAuthProvider.PROVIDER_ID,
-      firebase.auth.GoogleAuthProvider.PROVIDER_ID
-    ],
-    signInFlow: 'popup', // Can also be 'redirect'
-    tosUrl: '/terms.html', // Terms of service URL
-    privacyPolicyUrl: '/privacy.html' // Privacy policy URL
-  };
-  // Render the widget in your container
-  ui.start('#firebaseui-auth-container', uiConfig);
-</script>
 
 <footer>
   <div class="wrap">
