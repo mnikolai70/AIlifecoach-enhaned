@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your dashboard — Makis Nikolaidis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --paper-dim:#F1F1F2;
+    --ink:#161719;
+    --ink-soft:#595C63;
+    --navy:#0B0B0D;
+    --navy-2:#1A1B1E;
+    --brass:#C7A24B;
+    --teal:#3E7BFF;
+    --line:rgba(22,23,25,0.13);
+    --line-dark:rgba(255,255,255,0.14);
+    --max:1180px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;
+  }
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:700;line-height:1.1;margin:0;letter-spacing:-0.01em;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px;}
+  @media(max-width:720px){.wrap{padding:0 20px;}}
+
+  header{border-bottom:1px solid var(--line);}
+  .navbar{max-width:var(--max);margin:0 auto;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+  .brand{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:12px;}
+  .brand img{width:38px;height:38px;object-fit:cover;border-radius:6px;}
+  .brand .tag{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:400;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.08em;display:block;}
+  .cta-btn{
+    display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);
+    padding:11px 20px;border-radius:2px;text-decoration:none;font-size:0.9rem;font-weight:500;
+    border:1px solid var(--ink);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .cta-btn:hover{background:transparent;color:var(--ink);}
+  .cta-btn.ghost{background:transparent;color:var(--ink);}
+  .cta-btn.ghost:hover{background:var(--ink);color:var(--paper);}
+
+  .hero-band{background:var(--navy);color:#fff;padding:64px 0;}
+  .hero-band .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;color:var(--teal);text-transform:uppercase;margin-bottom:14px;display:block;}
+  .hero-band h1{font-size:clamp(1.7rem,3.4vw,2.4rem);color:#fff;}
+  .hero-band p{color:rgba(255,255,255,0.7);margin-top:14px;max-width:640px;}
+  .interest-tag{
+    display:inline-block;margin-top:18px;font-family:'JetBrains Mono',monospace;
+    font-size:0.8rem;color:var(--brass);border:1px solid var(--line-dark);border-radius:20px;
+    padding:8px 16px;
+  }
+
+  section{padding:64px 0;}
+  .sec-head{max-width:640px;margin-bottom:36px;}
+  .sec-head .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;color:var(--brass);text-transform:uppercase;margin-bottom:14px;display:block;}
+  .sec-head p{color:var(--ink-soft);margin-top:12px;}
+
+  .demo-band{
+    background:var(--paper-dim);border:1px solid var(--line);padding:48px;border-radius:2px;
+  }
+  .demo-band h3{font-size:1.3rem;margin-bottom:10px;}
+  .demo-band p{color:var(--ink-soft);}
+
+  .programs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  @media(max-width:900px){.programs-grid{grid-template-columns:1fr;}}
+  .plan{border:1px solid var(--line-dark);padding:32px 28px;display:flex;flex-direction:column;gap:14px;background:var(--navy-2);color:#fff;}
+  .plan.featured{background:var(--brass);color:var(--navy);border-color:var(--brass);}
+  .plan .opt{font-family:'JetBrains Mono',monospace;font-size:0.74rem;letter-spacing:0.06em;color:var(--teal);}
+  .plan.featured .opt{color:var(--navy);}
+  .plan h3{font-size:1.7rem;}
+  .plan .sub{font-size:0.86rem;color:rgba(255,255,255,0.6);}
+  .plan.featured .sub{color:rgba(20,26,43,0.7);}
+  .plan p.desc{color:rgba(255,255,255,0.75);font-size:0.92rem;flex:1;}
+  .plan.featured p.desc{color:rgba(20,26,43,0.82);}
+
+  #loading{padding:80px 32px;text-align:center;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div id="loading">Loading your dashboard…</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div class="navbar">
+      <div class="brand">
+        <img src="logo.jpg" alt="Makis Nikolaidis logo">
+        <span><span>Makis Nikolaidis</span><span class="tag">AI Assisted Life Coach</span></span>
+      </div>
+      <a href="#" id="signout-btn" class="cta-btn ghost">Sign out</a>
+    </div>
+  </header>
+
+  <div class="hero-band">
+    <div class="wrap">
+      <span class="eyebrow">Your dashboard</span>
+      <h1 id="welcome-heading">Welcome back</h1>
+      <p>Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.</p>
+      <span class="interest-tag" id="interest-display">—</span>
+    </div>
+  </div>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Free demo, unlocked</span>
+        <p>Open the conversation bubble in the corner of this page for your free 5-minute session with the AI life coach.</p>
+      </div>
+      <div class="demo-band">
+        <h3>Five minutes. No commitment.</h3>
+        <p>Say hello and mention what's on your mind — the AI life coach is ready whenever you are.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--paper-dim);">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Choose your depth</span>
+        <h2 style="font-size:clamp(1.6rem,3vw,2.1rem);">Ready to go further?</h2>
+        <p>From a focused sprint to the full pairing of AI availability and in-person coaching craft.</p>
+      </div>
+      <div class="programs-grid">
+        <div class="plan">
+          <span class="opt">Option A</span>
+          <h3>3 <span style="font-size:1rem;">hours</span></h3>
+          <span class="sub">with your AI Life Coach</span>
+          <p class="desc">A focused sprint on one goal or one sticking point.</p>
+          <a href="mailto:hello@example.com?subject=Option%20A" class="cta-btn ghost" style="justify-content:center;border-color:var(--line-dark);color:#fff;">Start Option A</a>
+        </div>
+        <div class="plan featured">
+          <span class="opt">Option B</span>
+          <h3>10 <span style="font-size:1rem;">hours</span></h3>
+          <span class="sub">with your AI Life Coach</span>
+          <p class="desc">Room to work through a full goal cycle, clarify the desire, build the plan.</p>
+          <a href="mailto:hello@example.com?subject=Option%20B" class="cta-btn" style="justify-content:center;background:var(--navy);color:#fff;border-color:var(--navy);">Start Option B</a>
+        </div>
+        <div class="plan">
+          <span class="opt">Option C</span>
+          <h3>15 <span style="font-size:1rem;">hours + 3 sessions</span></h3>
+          <span class="sub">AI hours, plus 3 private sessions with me</span>
+          <p class="desc">The full pairing: consistent AI availability, plus three in-person sessions with a certified coach.</p>
+          <a href="mailto:hello@example.com?subject=Option%20C" class="cta-btn ghost" style="justify-content:center;border-color:var(--line-dark);color:#fff;">Start Option C</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ElevenLabs Conversational AI floating widget -->
+<elevenlabs-convai agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
+    authDomain: "lifecoach-authentication.firebaseapp.com",
+    projectId: "lifecoach-authentication",
+    storageBucket: "lifecoach-authentication.firebasestorage.app",
+    messagingSenderId: "937227852104",
+    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
+    measurementId: "G-DSKHMB7D5S"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      window.location.href = 'signin.html';
+      return;
+    }
+
+    db.collection('users').doc(user.uid).get().then(function(doc) {
+      if (!doc.exists || !doc.data().fullName || !doc.data().interests) {
+        window.location.href = 'profile.html';
+        return;
+      }
+      var data = doc.data();
+      var firstName = data.fullName.split(' ')[0];
+      document.getElementById('welcome-heading').textContent = 'Welcome back, ' + firstName;
+      document.getElementById('interest-display').textContent = 'Focused on: ' + data.interests;
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    }).catch(function(err) {
+      document.getElementById('loading').textContent = 'Could not load your dashboard: ' + err.message;
+    });
+  });
+
+  document.getElementById('signout-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    auth.signOut().then(function() {
+      window.location.href = 'index.html';
+    });
+  });
+</script>
+
+</body>
+</html>
