@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="doc-title">Complete your order — Makis Nikolaidis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- PayPal JS SDK — replace YOUR_PAYPAL_CLIENT_ID with your real client ID from developer.paypal.com -->
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=EUR"></script>
+
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --paper-dim:#F1F1F2;
+    --ink:#161719;
+    --ink-soft:#595C63;
+    --navy:#0B0B0D;
+    --navy-2:#1A1B1E;
+    --brass:#C7A24B;
+    --teal:#3E7BFF;
+    --line:rgba(22,23,25,0.13);
+    --line-dark:rgba(255,255,255,0.14);
+    --max:1180px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:700;line-height:1.15;margin:0;letter-spacing:-0.01em;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px;}
+  @media(max-width:720px){.wrap{padding:0 20px;}}
+
+  header{border-bottom:1px solid var(--line);}
+  .navbar{max-width:var(--max);margin:0 auto;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+  .brand{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:12px;}
+  .brand img{width:38px;height:38px;object-fit:cover;border-radius:6px;}
+  .nav-right{display:flex;align-items:center;gap:16px;}
+  .lang-toggle{display:flex;border:1px solid var(--line);border-radius:20px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:1rem;}
+  .lang-toggle button{border:none;background:transparent;padding:6px 8px;cursor:pointer;color:var(--ink-soft);font-family:inherit;font-size:inherit;letter-spacing:0.03em;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .lang-toggle button.active{background:var(--ink);color:var(--paper);}
+  .cta-btn{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:2px;text-decoration:none;font-size:0.9rem;font-weight:500;border:1px solid var(--ink);cursor:pointer;font-family:'Inter',sans-serif;}
+  .cta-btn:hover{background:transparent;color:var(--ink);}
+  .cta-btn.ghost{background:transparent;color:var(--ink);}
+  .cta-btn.ghost:hover{background:var(--ink);color:var(--paper);}
+  .cta-btn:disabled{opacity:0.5;cursor:default;}
+
+  .order-summary{background:var(--navy);color:#fff;padding:36px 0;}
+  .order-summary .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;color:var(--teal);text-transform:uppercase;margin-bottom:10px;display:block;}
+  .order-summary h1{font-size:clamp(1.5rem,3vw,2rem);}
+  .order-summary .price{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.3rem;color:var(--brass);margin-top:8px;display:block;}
+
+  main{padding:48px 0 80px;}
+  .cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:32px;align-items:start;}
+  @media(max-width:900px){.cols{grid-template-columns:1fr;}}
+
+  .panel{border:1px solid var(--line);padding:32px;border-radius:2px;background:#fff;}
+  .panel h2{font-size:1.15rem;margin-bottom:18px;}
+
+  label{font-family:'JetBrains Mono',monospace;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);display:block;margin-bottom:7px;margin-top:16px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text], input[type=email], input[type=tel], textarea{
+    width:100%;border:1px solid var(--line);border-radius:2px;padding:11px 13px;
+    font-family:'Inter',sans-serif;font-size:0.92rem;color:var(--ink);background:#fff;
+  }
+  textarea{resize:vertical;min-height:80px;}
+  input:focus, textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
+
+  .method-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .method-tab{
+    border:1px solid var(--line);background:#fff;padding:9px 14px;border-radius:20px;cursor:pointer;
+    font-size:0.82rem;color:var(--ink-soft);font-family:'Inter',sans-serif;
+  }
+  .method-tab.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .method-panel{display:none;border:1px solid var(--line);background:var(--paper-dim);padding:22px;border-radius:2px;margin-bottom:8px;}
+  .method-panel.active{display:block;}
+  .method-panel .row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:0.88rem;}
+  .method-panel .row:last-of-type{border-bottom:none;}
+  .method-panel .row b{font-family:'JetBrains Mono',monospace;font-weight:500;}
+  .method-note{font-size:0.82rem;color:var(--ink-soft);margin-top:12px;}
+  .placeholder-flag{background:#FFF4D6;border:1px solid var(--brass);color:#6b5518;font-size:0.74rem;padding:8px 10px;border-radius:2px;margin-top:10px;}
+
+  #confirmation{display:none;text-align:center;padding:60px 20px;}
+  #confirmation h2{font-size:1.5rem;margin-bottom:14px;}
+  #confirmation p{color:var(--ink-soft);max-width:480px;margin:0 auto;}
+
+  #loading{padding:80px 32px;text-align:center;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  #error-box{color:#B3261E;font-size:0.85rem;margin-top:12px;display:none;}
+</style>
+</head>
+<body>
+
+<div id="loading">Loading your order…</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div class="navbar">
+      <div class="brand">
+        <img src="logo.jpg" alt="Makis Nikolaidis logo">
+        <span>Makis Nikolaidis</span>
+      </div>
+      <div class="nav-right">
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 30" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;"><clipPath id="ukc"><path d="M0,0 h60 v30 h-60 z"/></clipPath><g clip-path="url(#ukc)"><path d="M0,0 h60 v30 h-60 z" fill="#00247d"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" stroke-width="2"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#cf142b" stroke-width="6"/></g></svg></button>
+          <button id="btn-el" onclick="setLang('el')" title="Ελληνικά" aria-label="Ελληνικά"><svg viewBox="0 0 60 40" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;"><rect width="60" height="40" fill="#0D5EAF"/><g fill="#fff"><rect y="4.44" width="60" height="4.45"/><rect y="13.33" width="60" height="4.45"/><rect y="22.22" width="60" height="4.45"/><rect y="31.11" width="60" height="4.45"/></g><rect width="24" height="22.22" fill="#0D5EAF"/><rect x="9" width="6" height="22.22" fill="#fff"/><rect y="8" width="24" height="6" fill="#fff"/></svg></button>
+        </div>
+        <a href="dashboard.html" class="cta-btn ghost" id="back-link">Back to dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="order-summary">
+    <div class="wrap">
+      <span class="eyebrow" id="eyebrow-order">Your order</span>
+      <h1 id="option-name">Option</h1>
+      <span class="price" id="option-price">—</span>
+    </div>
+  </div>
+
+  <main>
+    <div class="wrap">
+
+      <div class="cols" id="order-cols">
+        <div class="panel">
+          <h2 id="form-title">Your details</h2>
+          <form id="order-form">
+            <label for="fullName" id="label-name">Full name</label>
+            <input type="text" id="fullName" required autocomplete="name">
+
+            <label for="address" id="label-address">Address</label>
+            <input type="text" id="address" required autocomplete="street-address" placeholder="Street, number, city, postal code">
+
+            <label for="phone" id="label-phone">Phone number</label>
+            <input type="tel" id="phone" required autocomplete="tel" placeholder="+30 69XXXXXXXX">
+
+            <label for="email" id="label-email">Email</label>
+            <input type="email" id="email" required autocomplete="email">
+
+            <label for="comment" id="label-comment">Comment (optional)</label>
+            <textarea id="comment" placeholder=""></textarea>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h2 id="payment-title">Payment method</h2>
+          <div class="method-tabs">
+            <button type="button" class="method-tab active" data-method="bank" id="tab-bank">Bank transfer</button>
+            <button type="button" class="method-tab" data-method="iris" id="tab-iris">IRIS</button>
+            <button type="button" class="method-tab" data-method="paypal" id="tab-paypal">PayPal</button>
+            <button type="button" class="method-tab" data-method="card" id="tab-card">Card</button>
+          </div>
+
+          <div class="method-panel active" id="panel-bank">
+            <div class="row"><span id="bank-label-recipient">Recipient</span><b>Makis Nikolaidis</b></div>
+            <div class="row"><span id="bank-label-iban">IBAN</span><b>GRXX XXXX XXXX XXXX XXXX XXXX XXX</b></div>
+            <div class="row"><span id="bank-label-bic">BIC / SWIFT</span><b>XXXXGRAA</b></div>
+            <div class="row"><span id="bank-label-ref">Reference</span><b id="bank-ref-value">Your name + Option</b></div>
+            <p class="method-note" id="bank-note">Please use your full name and the option code as the payment reference so we can match your transfer.</p>
+            <div class="placeholder-flag" id="bank-placeholder-note">⚠ Placeholder IBAN — replace with your real bank details before going live.</div>
+            <button type="button" class="cta-btn" id="btn-confirm-bank" style="margin-top:16px;width:100%;justify-content:center;">I've sent the bank transfer</button>
+          </div>
+
+          <div class="method-panel" id="panel-iris">
+            <div class="row"><span id="iris-label-recipient">Recipient</span><b>Makis Nikolaidis</b></div>
+            <div class="row"><span id="iris-label-phone">IRIS mobile number</span><b>+30 69XXXXXXXX</b></div>
+            <div class="row"><span id="iris-label-ref">Reference</span><b id="iris-ref-value">Your name + Option</b></div>
+            <p class="method-note" id="iris-note">Send via your bank's IRIS instant payments option, using your name and the option code as the description.</p>
+            <div class="placeholder-flag" id="iris-placeholder-note">⚠ Placeholder number — replace with your real IRIS-registered number before going live.</div>
+            <button type="button" class="cta-btn" id="btn-confirm-iris" style="margin-top:16px;width:100%;justify-content:center;">I've sent the IRIS payment</button>
+          </div>
+
+          <div class="method-panel" id="panel-paypal">
+            <p class="method-note" id="paypal-note">Pay securely with PayPal — you'll be redirected to complete the payment.</p>
+            <div class="placeholder-flag" id="paypal-placeholder-note">⚠ Placeholder PayPal Client ID — replace YOUR_PAYPAL_CLIENT_ID in the page source with your real one from developer.paypal.com before going live.</div>
+            <div id="paypal-button-container" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="method-panel" id="panel-card">
+            <p class="method-note" id="card-note">Pay by card via our secure checkout partner (Stripe or Viva Wallet).</p>
+            <div class="placeholder-flag" id="card-placeholder-note">⚠ Placeholder link — replace href="#" on the button below with your real Stripe Payment Link or Viva Smart Checkout link before going live.</div>
+            <a href="#" id="btn-card-pay" class="cta-btn" style="margin-top:16px;width:100%;justify-content:center;">Pay by card</a>
+          </div>
+
+          <div id="error-box"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="wrap" id="confirmation">
+    <h2 id="confirm-title">Thank you — your order has been received</h2>
+    <p id="confirm-body">Makis will personally review your order and send you a confirmation email, along with details and next steps, shortly.</p>
+    <a href="dashboard.html" class="cta-btn" style="margin-top:24px;display:inline-flex;" id="confirm-back-link">Back to dashboard</a>
+  </div>
+</div>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
+    authDomain: "lifecoach-authentication.firebaseapp.com",
+    projectId: "lifecoach-authentication",
+    storageBucket: "lifecoach-authentication.firebasestorage.app",
+    messagingSenderId: "937227852104",
+    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
+    measurementId: "G-DSKHMB7D5S"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+
+  var currentUser = null;
+  var currentLang = 'en';
+  var currentProfileName = '';
+
+  var optionData = {
+    A: { en: { name: 'Option A — 30 minutes', price: '10€' }, el: { name: 'Επιλογή Α — 30 λεπτά', price: '10€' } },
+    B: { en: { name: 'Option B — 3 hours',    price: '20€' }, el: { name: 'Επιλογή Β — 3 ώρες',    price: '20€' } },
+    C: { en: { name: 'Option C — 6 hours + 3 live sessions', price: '190€' }, el: { name: 'Επιλογή Γ — 6 ώρες + 3 δια ζώσης συνεδρίες', price: '190€' } },
+    D: { en: { name: 'Option D — Unlimited / month', price: 'Contact for customised plan' }, el: { name: 'Επιλογή Δ — Απεριόριστο / μήνα', price: 'Επικοινωνήστε για εξατομικευμένο πλάνο' } }
+  };
+
+  var params = new URLSearchParams(window.location.search);
+  var optionCode = (params.get('option') || 'A').toUpperCase();
+  if (!optionData[optionCode]) optionCode = 'A';
+
+  var copy = {
+    en: {
+      docTitle: 'Complete your order — Makis Nikolaidis',
+      eyebrowOrder: 'Your order', backLink: 'Back to dashboard',
+      formTitle: 'Your details', paymentTitle: 'Payment method',
+      labelName: 'Full name', labelAddress: 'Address', labelPhone: 'Phone number', labelEmail: 'Email', labelComment: 'Comment (optional)',
+      tabBank: 'Bank transfer', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Card',
+      bankRecipient: 'Recipient', bankIban: 'IBAN', bankBic: 'BIC / SWIFT', bankRef: 'Reference', bankRefValue: 'Your name + Option',
+      bankNote: "Please use your full name and the option code as the payment reference so we can match your transfer.",
+      bankPlaceholder: '⚠ Placeholder IBAN — replace with your real bank details before going live.',
+      btnConfirmBank: "I've sent the bank transfer",
+      irisRecipient: 'Recipient', irisPhone: 'IRIS mobile number', irisRef: 'Reference', irisRefValue: 'Your name + Option',
+      irisNote: "Send via your bank's IRIS instant payments option, using your name and the option code as the description.",
+      irisPlaceholder: '⚠ Placeholder number — replace with your real IRIS-registered number before going live.',
+      btnConfirmIris: "I've sent the IRIS payment",
+      paypalNote: "Pay securely with PayPal — you'll be redirected to complete the payment.",
+      paypalPlaceholder: '⚠ Placeholder PayPal Client ID — replace YOUR_PAYPAL_CLIENT_ID in the page source with your real one from developer.paypal.com before going live.',
+      cardNote: 'Pay by card via our secure checkout partner (Stripe or Viva Wallet).',
+      cardPlaceholder: '⚠ Placeholder link — replace href="#" on the button below with your real Stripe Payment Link or Viva Smart Checkout link before going live.',
+      btnCardPay: 'Pay by card',
+      confirmTitle: 'Thank you — your order has been received',
+      confirmBody: 'Makis will personally review your order and send you a confirmation email, along with details and next steps, shortly.',
+      confirmBack: 'Back to dashboard',
+      loading: 'Loading your order…',
+      errSave: 'Could not save your order: '
+    },
+    el: {
+      docTitle: 'Ολοκλήρωση παραγγελίας — Makis Nikolaidis',
+      eyebrowOrder: 'Η παραγγελία σας', backLink: 'Πίσω στον πίνακά μου',
+      formTitle: 'Τα στοιχεία σας', paymentTitle: 'Τρόπος πληρωμής',
+      labelName: 'Ονοματεπώνυμο', labelAddress: 'Διεύθυνση', labelPhone: 'Τηλέφωνο', labelEmail: 'Email', labelComment: 'Σχόλιο (προαιρετικό)',
+      tabBank: 'Τραπεζικό έμβασμα', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Κάρτα',
+      bankRecipient: 'Δικαιούχος', bankIban: 'IBAN', bankBic: 'BIC / SWIFT', bankRef: 'Αιτιολογία', bankRefValue: 'Ονοματεπώνυμο + Επιλογή',
+      bankNote: 'Χρησιμοποιήστε το ονοματεπώνυμό σας και τον κωδικό επιλογής ως αιτιολογία, ώστε να αντιστοιχίσουμε το έμβασμά σας.',
+      bankPlaceholder: '⚠ Ενδεικτικό IBAN — αντικαταστήστε το με τα πραγματικά στοιχεία του λογαριασμού σας πριν τεθεί σε λειτουργία.',
+      btnConfirmBank: 'Έστειλα το τραπεζικό έμβασμα',
+      irisRecipient: 'Δικαιούχος', irisPhone: 'Αριθμός κινητού IRIS', irisRef: 'Αιτιολογία', irisRefValue: 'Ονοματεπώνυμο + Επιλογή',
+      irisNote: 'Στείλτε μέσω της επιλογής IRIS της τράπεζάς σας, χρησιμοποιώντας το όνομά σας και τον κωδικό επιλογής ως περιγραφή.',
+      irisPlaceholder: '⚠ Ενδεικτικός αριθμός — αντικαταστήστε τον με τον πραγματικό αριθμό IRIS πριν τεθεί σε λειτουργία.',
+      btnConfirmIris: 'Έστειλα την πληρωμή IRIS',
+      paypalNote: 'Πληρώστε με ασφάλεια μέσω PayPal — θα μεταφερθείτε για να ολοκληρώσετε την πληρωμή.',
+      paypalPlaceholder: '⚠ Ενδεικτικό PayPal Client ID — αντικαταστήστε το YOUR_PAYPAL_CLIENT_ID στον κώδικα με το πραγματικό σας από το developer.paypal.com πριν τεθεί σε λειτουργία.',
+      cardNote: 'Πληρώστε με κάρτα μέσω του συνεργάτη ασφαλούς πληρωμών (Stripe ή Viva Wallet).',
+      cardPlaceholder: '⚠ Ενδεικτικός σύνδεσμος — αντικαταστήστε το href="#" στο παρακάτω κουμπί με τον πραγματικό σας σύνδεσμο Stripe Payment Link ή Viva Smart Checkout πριν τεθεί σε λειτουργία.',
+      btnCardPay: 'Πληρωμή με κάρτα',
+      confirmTitle: 'Ευχαριστούμε — η παραγγελία σας παραλήφθηκε',
+      confirmBody: 'Ο Μάκης θα εξετάσει προσωπικά την παραγγελία σας και θα σας στείλει email επιβεβαίωσης, με λεπτομέρειες και επόμενα βήματα, σύντομα.',
+      confirmBack: 'Πίσω στον πίνακά μου',
+      loading: 'Φόρτωση της παραγγελίας σας…',
+      errSave: 'Δεν ήταν δυνατή η αποθήκευση της παραγγελίας σας: '
+    }
+  };
+
+  function applyOptionCopy(lang){
+    var od = optionData[optionCode][lang];
+    document.getElementById('option-name').textContent = od.name;
+    document.getElementById('option-price').textContent = od.price;
+    var refText = (currentProfileName || '') + ' — Option ' + optionCode;
+    document.getElementById('bank-ref-value').textContent = refText;
+    document.getElementById('iris-ref-value').textContent = refText;
+  }
+
+  function applyStaticCopy(lang){
+    var c = copy[lang];
+    document.getElementById('doc-title').textContent = c.docTitle;
+    document.title = c.docTitle;
+    document.getElementById('eyebrow-order').textContent = c.eyebrowOrder;
+    document.getElementById('back-link').textContent = c.backLink;
+    document.getElementById('form-title').textContent = c.formTitle;
+    document.getElementById('payment-title').textContent = c.paymentTitle;
+    document.getElementById('label-name').textContent = c.labelName;
+    document.getElementById('label-address').textContent = c.labelAddress;
+    document.getElementById('label-phone').textContent = c.labelPhone;
+    document.getElementById('label-email').textContent = c.labelEmail;
+    document.getElementById('label-comment').textContent = c.labelComment;
+    document.getElementById('tab-bank').textContent = c.tabBank;
+    document.getElementById('tab-iris').textContent = c.tabIris;
+    document.getElementById('tab-paypal').textContent = c.tabPaypal;
+    document.getElementById('tab-card').textContent = c.tabCard;
+    document.getElementById('bank-label-recipient').textContent = c.bankRecipient;
+    document.getElementById('bank-label-iban').textContent = c.bankIban;
+    document.getElementById('bank-label-bic').textContent = c.bankBic;
+    document.getElementById('bank-label-ref').textContent = c.bankRef;
+    document.getElementById('bank-note').textContent = c.bankNote;
+    document.getElementById('bank-placeholder-note').textContent = c.bankPlaceholder;
+    document.getElementById('btn-confirm-bank').textContent = c.btnConfirmBank;
+    document.getElementById('iris-label-recipient').textContent = c.irisRecipient;
+    document.getElementById('iris-label-phone').textContent = c.irisPhone;
+    document.getElementById('iris-label-ref').textContent = c.irisRef;
+    document.getElementById('iris-note').textContent = c.irisNote;
+    document.getElementById('iris-placeholder-note').textContent = c.irisPlaceholder;
+    document.getElementById('btn-confirm-iris').textContent = c.btnConfirmIris;
+    document.getElementById('paypal-note').textContent = c.paypalNote;
+    document.getElementById('paypal-placeholder-note').textContent = c.paypalPlaceholder;
+    document.getElementById('card-note').textContent = c.cardNote;
+    document.getElementById('card-placeholder-note').textContent = c.cardPlaceholder;
+    document.getElementById('btn-card-pay').textContent = c.btnCardPay;
+    document.getElementById('confirm-title').textContent = c.confirmTitle;
+    document.getElementById('confirm-body').textContent = c.confirmBody;
+    document.getElementById('confirm-back-link').textContent = c.confirmBack;
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-el').classList.toggle('active', lang === 'el');
+    applyOptionCopy(lang);
+  }
+
+  function setLang(lang){
+    currentLang = lang;
+    applyStaticCopy(lang);
+    try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}
+  }
+
+  // ---- payment method tabs ----
+  document.querySelectorAll('.method-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      document.querySelectorAll('.method-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.method-panel').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.getAttribute('data-method')).classList.add('active');
+    });
+  });
+
+  function readForm(){
+    return {
+      fullName: document.getElementById('fullName').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      comment: document.getElementById('comment').value.trim()
+    };
+  }
+
+  function formIsValid(){
+    var f = readForm();
+    return f.fullName && f.address && f.phone && f.email;
+  }
+
+  function showConfirmation(){
+    document.getElementById('order-cols').style.display = 'none';
+    document.querySelector('.order-summary').style.display = 'none';
+    document.getElementById('confirmation').style.display = 'block';
+  }
+
+  function showError(msg){
+    var box = document.getElementById('error-box');
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+
+  function saveOrder(extra){
+    if (!formIsValid()){
+      showError(currentLang === 'el' ? 'Συμπληρώστε όνομα, διεύθυνση, τηλέφωνο και email πριν συνεχίσετε.' : 'Please fill in name, address, phone, and email before continuing.');
+      return Promise.reject('invalid-form');
+    }
+    var form = readForm();
+    var order = Object.assign({
+      uid: currentUser.uid,
+      option: optionCode,
+      price: optionData[optionCode].en.price,
+      fullName: form.fullName,
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      comment: form.comment,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, extra);
+    return db.collection('orders').add(order);
+  }
+
+  document.getElementById('btn-confirm-bank').addEventListener('click', function(){
+    saveOrder({ paymentMethod: 'bank_transfer', status: 'pending_verification' })
+      .then(showConfirmation)
+      .catch(function(err){ if (err !== 'invalid-form') showError(copy[currentLang].errSave + err.message); });
+  });
+
+  document.getElementById('btn-confirm-iris').addEventListener('click', function(){
+    saveOrder({ paymentMethod: 'iris', status: 'pending_verification' })
+      .then(showConfirmation)
+      .catch(function(err){ if (err !== 'invalid-form') showError(copy[currentLang].errSave + err.message); });
+  });
+
+  document.getElementById('btn-card-pay').addEventListener('click', function(e){
+    e.preventDefault();
+    if (!formIsValid()){
+      showError(currentLang === 'el' ? 'Συμπληρώστε όνομα, διεύθυνση, τηλέφωνο και email πριν συνεχίσετε.' : 'Please fill in name, address, phone, and email before continuing.');
+      return;
+    }
+    saveOrder({ paymentMethod: 'card', status: 'pending_card_payment' })
+      .then(function(){
+        // TODO: replace this with a redirect to your real Stripe Payment Link or Viva Smart Checkout URL
+        window.location.href = document.getElementById('btn-card-pay').getAttribute('data-checkout-url') || '#';
+      })
+      .catch(function(err){ if (err !== 'invalid-form') showError(copy[currentLang].errSave + err.message); });
+  });
+
+  // ---- PayPal button (only renders correctly once you supply a real client-id above) ----
+  if (window.paypal) {
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        if (!formIsValid()){
+          showError(currentLang === 'el' ? 'Συμπληρώστε όνομα, διεύθυνση, τηλέφωνο και email πριν συνεχίσετε.' : 'Please fill in name, address, phone, and email before continuing.');
+          return Promise.reject('invalid-form');
+        }
+        var amount = optionData[optionCode].en.price.replace('€','').trim();
+        return actions.order.create({
+          purchase_units: [{ amount: { value: isNaN(parseFloat(amount)) ? '0.01' : amount, currency_code: 'EUR' } }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          return saveOrder({ paymentMethod: 'paypal', status: 'paid', paypalOrderId: data.orderID });
+        }).then(showConfirmation);
+      },
+      onError: function(err) {
+        showError(copy[currentLang].errSave + err);
+      }
+    }).render('#paypal-button-container');
+  }
+
+  // ---- auth + prefill ----
+  auth.onAuthStateChanged(function(user){
+    if (!user){
+      window.location.href = 'signin.html';
+      return;
+    }
+    currentUser = user;
+    document.getElementById('email').value = user.email || '';
+
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      if (doc.exists && doc.data().fullName){
+        currentProfileName = doc.data().fullName;
+        document.getElementById('fullName').value = currentProfileName;
+      }
+      var saved = 'en';
+      try{ saved = localStorage.getItem('waypoint-lang') || 'en'; }catch(e){}
+      setLang(saved);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    });
+  });
+</script>
+</body>
+</html>
