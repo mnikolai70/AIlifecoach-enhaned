@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="doc-title">Sign in — Makis Nikolaidis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase App / Auth / Firestore Compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- FirebaseUI CDN -->
+<script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --ink:#161719;
+    --ink-soft:#595C63;
+    --navy:#0B0B0D;
+    --brass:#C7A24B;
+    --line:rgba(22,23,25,0.13);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:36px 28px;
+    min-height:100vh;
+  }
+  .top-row{width:100%;max-width:360px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .brand{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1rem;
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand img{width:32px;height:32px;object-fit:cover;border-radius:6px;}
+  .lang-toggle{
+    display:flex;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    font-family:'JetBrains Mono',monospace;font-size:1rem;
+  }
+  .lang-toggle button{
+    border:none;background:transparent;padding:6px 10px;cursor:pointer;color:var(--ink-soft);
+    font-family:inherit;font-size:inherit;letter-spacing:0.03em;line-height:1;
+  }
+  .lang-toggle button.active{background:var(--ink);color:var(--paper);}
+  h1{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1.3rem;
+    margin:18px 0 4px;text-align:center;
+  }
+  p.sub{color:var(--ink-soft);font-size:0.92rem;margin:0 0 24px;text-align:center;max-width:320px;}
+  #firebaseui-auth-container{width:100%;max-width:360px;}
+  .firebaseui-idp-button{border-radius:2px !important;}
+  .firebaseui-container{max-width:360px;}
+</style>
+</head>
+<body>
+
+  <div class="top-row">
+    <div class="brand">
+      <img src="logo.jpg" alt="Makis Nikolaidis logo">
+      <span>Makis Nikolaidis</span>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English">🇬🇧</button>
+      <button id="btn-el" onclick="setLang('el')" title="Ελληνικά" aria-label="Ελληνικά">🇬🇷</button>
+    </div>
+  </div>
+
+  <h1 id="page-title">Sign in or create an account</h1>
+  <p class="sub" id="page-sub">Sign up to unlock the free 5-minute demo with the AI life coach, and save your areas of interest.</p>
+
+  <div id="firebaseui-auth-container"></div>
+  <div id="loader" style="color:var(--ink-soft);font-size:0.85rem;">Loading sign-in options…</div>
+
+<script>
+  var params = new URLSearchParams(window.location.search);
+  var mode = params.get('flow') || 'signin';
+
+  var copy = {
+    en: {
+      title: mode === 'signup' ? 'Create your account' : 'Sign in to your account',
+      sub: mode === 'signup'
+        ? "Sign up to unlock the free 5-minute demo with the AI life coach, and save your areas of interest."
+        : "Welcome back — sign in to pick up where you left off.",
+      docTitle: mode === 'signup' ? 'Sign up — Makis Nikolaidis' : 'Sign in — Makis Nikolaidis',
+      loader: 'Loading sign-in options…'
+    },
+    el: {
+      title: mode === 'signup' ? 'Δημιουργία λογαριασμού' : 'Σύνδεση στον λογαριασμό σας',
+      sub: mode === 'signup'
+        ? "Εγγραφείτε για να ξεκλειδώσετε το δωρεάν demo 5 λεπτών με τον AI life coach, και αποθηκεύστε τα ενδιαφέροντά σας."
+        : "Καλώς ήρθατε ξανά — συνδεθείτε για να συνεχίσετε από εκεί που μείνατε.",
+      docTitle: mode === 'signup' ? 'Εγγραφή — Makis Nikolaidis' : 'Σύνδεση — Makis Nikolaidis',
+      loader: 'Φόρτωση επιλογών σύνδεσης…'
+    }
+  };
+
+  function setLang(lang){
+    document.getElementById('page-title').textContent = copy[lang].title;
+    document.getElementById('page-sub').textContent = copy[lang].sub;
+    document.getElementById('doc-title').textContent = copy[lang].docTitle;
+    document.title = copy[lang].docTitle;
+    var loaderEl = document.getElementById('loader');
+    if (loaderEl) loaderEl.textContent = copy[lang].loader;
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-el').classList.toggle('active', lang === 'el');
+    try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}
+  }
+
+  (function(){
+    var saved = 'en';
+    try{ saved = localStorage.getItem('waypoint-lang') || 'en'; }catch(e){}
+    setLang(saved);
+  })();
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
+    authDomain: "lifecoach-authentication.firebaseapp.com",
+    projectId: "lifecoach-authentication",
+    storageBucket: "lifecoach-authentication.firebasestorage.app",
+    messagingSenderId: "937227852104",
+    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
+    measurementId: "G-DSKHMB7D5S"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  var ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+  var uiConfig = {
+    signInSuccessUrl: 'profile.html',
+    signInOptions: [
+      firebase.auth.EmailAuthProvider.PROVIDER_ID,
+      firebase.auth.GoogleAuthProvider.PROVIDER_ID
+    ],
+    signInFlow: 'popup',
+    tosUrl: 'terms.html',
+    privacyPolicyUrl: 'privacy.html',
+    callbacks: {
+      uiShown: function() {
+        var loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+    }
+  };
+
+  ui.start('#firebaseui-auth-container', uiConfig);
+</script>
+</body>
+</html>
