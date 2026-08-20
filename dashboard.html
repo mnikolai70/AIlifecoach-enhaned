@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="doc-title">Your dashboard — Makis Nikolaidis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --paper-dim:#F1F1F2;
+    --ink:#161719;
+    --ink-soft:#595C63;
+    --navy:#0B0B0D;
+    --navy-2:#1A1B1E;
+    --brass:#C7A24B;
+    --teal:#3E7BFF;
+    --line:rgba(22,23,25,0.13);
+    --line-dark:rgba(255,255,255,0.14);
+    --max:1180px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;
+  }
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:700;line-height:1.1;margin:0;letter-spacing:-0.01em;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px;}
+  @media(max-width:720px){.wrap{padding:0 20px;}}
+
+  header{border-bottom:1px solid var(--line);}
+  .navbar{max-width:var(--max);margin:0 auto;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+  .brand{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:12px;}
+  .brand img{width:38px;height:38px;object-fit:cover;border-radius:6px;}
+  .brand .tag{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:400;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.08em;display:block;}
+  .nav-right{display:flex;align-items:center;gap:16px;}
+  .lang-toggle{
+    display:flex;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    font-family:'JetBrains Mono',monospace;font-size:1rem;
+  }
+  .lang-toggle button{
+    border:none;background:transparent;padding:6px 8px;cursor:pointer;color:var(--ink-soft);
+    font-family:inherit;font-size:inherit;letter-spacing:0.03em;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lang-toggle button.active{background:var(--ink);color:var(--paper);}
+  .cta-btn{
+    display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);
+    padding:11px 20px;border-radius:2px;text-decoration:none;font-size:0.9rem;font-weight:500;
+    border:1px solid var(--ink);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .cta-btn:hover{background:transparent;color:var(--ink);}
+  .cta-btn.ghost{background:transparent;color:var(--ink);}
+  .cta-btn.ghost:hover{background:var(--ink);color:var(--paper);}
+
+  .hero-band{background:var(--navy);color:#fff;padding:64px 0;}
+  .hero-band .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;color:var(--teal);text-transform:uppercase;margin-bottom:14px;display:block;}
+  .hero-band h1{font-size:clamp(1.7rem,3.4vw,2.4rem);color:#fff;}
+  .hero-band p{color:rgba(255,255,255,0.7);margin-top:14px;max-width:640px;}
+  .interest-tag{
+    display:inline-block;margin-top:18px;font-family:'JetBrains Mono',monospace;
+    font-size:0.8rem;color:var(--teal);border:1px solid var(--line-dark);border-radius:20px;
+    padding:8px 16px;
+  }
+
+  section{padding:64px 0;}
+  .sec-head{max-width:640px;margin-bottom:36px;}
+  .sec-head .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;color:var(--teal);text-transform:uppercase;margin-bottom:14px;display:block;}
+  .sec-head h2{font-size:clamp(1.6rem,3vw,2.1rem);}
+  .sec-head p{color:var(--ink-soft);margin-top:12px;}
+
+  .demo-band{
+    background:var(--paper-dim);border:1px solid var(--line);padding:48px;border-radius:2px;
+  }
+  .demo-band h3{font-size:1.3rem;margin-bottom:10px;}
+  .demo-band p{color:var(--ink-soft);}
+
+  #floating-time-badge{
+    position:fixed;left:20px;bottom:20px;z-index:9999;
+    background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,0.14);
+    padding:10px 16px;border-radius:24px;
+    font-family:'JetBrains Mono',monospace;font-size:0.82rem;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);
+    display:none;align-items:center;gap:8px;
+    transition:background 0.2s ease;
+  }
+  #floating-time-badge.visible{display:flex;}
+  #floating-time-badge.warning{background:#B3261E;}
+  #floating-time-badge .dot{
+    width:7px;height:7px;border-radius:50%;background:var(--brass);flex:none;
+  }
+  #floating-time-badge.warning .dot{background:#fff;}
+  @media (max-width:600px){
+    #floating-time-badge{left:12px;bottom:12px;font-size:0.76rem;padding:8px 13px;}
+  }
+
+  .programs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  @media(max-width:1100px){.programs-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:640px){.programs-grid{grid-template-columns:1fr;}}
+  .plan{border:1px solid var(--line-dark);padding:0 24px 24px;display:flex;flex-direction:column;gap:12px;background:var(--navy-2);color:#fff;position:relative;overflow:hidden;}
+  .plan.featured{background:var(--brass);color:var(--navy);border-color:var(--brass);}
+  .plan .opt{font-family:'JetBrains Mono',monospace;font-size:0.74rem;letter-spacing:0.06em;color:var(--teal);}
+  .plan.featured .opt{color:var(--navy);}
+  .plan h3{font-size:1.5rem;}
+  .plan .sub{font-size:0.84rem;color:rgba(255,255,255,0.6);}
+  .plan.featured .sub{color:rgba(20,26,43,0.7);}
+  .plan p.desc{color:rgba(255,255,255,0.75);font-size:0.86rem;}
+  .plan.featured p.desc{color:rgba(20,26,43,0.82);}
+  .plan .price-tag{
+    display:block;margin:0 -24px 6px;padding:14px 24px;text-align:center;
+    background:var(--brass);color:var(--navy);
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1.1rem;
+  }
+  .plan.featured .price-tag{background:var(--navy);color:#fff;}
+  .plan .badge-inline{
+    display:inline-block;margin-left:8px;background:var(--teal);color:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.05em;text-transform:uppercase;
+    padding:3px 9px;border-radius:20px;vertical-align:middle;
+  }
+  .plan.featured .badge-inline{background:var(--navy);color:#fff;}
+  .plan-features{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;flex:1;}
+  .plan-features li{font-size:0.8rem;line-height:1.42;color:rgba(255,255,255,0.82);padding-left:18px;position:relative;}
+  .plan-features li::before{content:"✓";position:absolute;left:0;top:0;color:var(--teal);font-weight:700;}
+  .plan.featured .plan-features li{color:rgba(20,26,43,0.85);}
+  .plan.featured .plan-features li::before{color:var(--navy);}
+
+  /* ---- journey strip ---- */
+  .journey{display:flex;align-items:center;gap:0;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:0.8rem;letter-spacing:0.05em;color:rgba(255,255,255,0.7);}
+  .journey .node{display:flex;align-items:center;gap:10px;}
+  .journey .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex:none;}
+  .journey .arrow{width:40px;height:1px;background:var(--line-dark);margin:0 14px;position:relative;}
+  .journey .arrow::after{content:'';position:absolute;right:0;top:-3px;width:6px;height:6px;border-right:1px solid rgba(255,255,255,0.5);border-bottom:1px solid rgba(255,255,255,0.5);transform:rotate(-45deg);}
+  @media(max-width:600px){.journey{gap:8px;} .journey .arrow{width:20px;margin:0 8px;}}
+
+  /* ---- progress + recommendation ---- */
+  .progress-recommend-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:800px){.progress-recommend-grid{grid-template-columns:1fr;}}
+  .panel-card{background:#fff;border:1px solid var(--line);padding:28px;border-radius:2px;}
+  .panel-card h3{font-size:1.05rem;margin-bottom:16px;}
+  .progress-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;}
+  .progress-list li{display:flex;align-items:center;gap:10px;font-size:0.9rem;color:var(--ink-soft);}
+  .progress-list .check{
+    width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:0.7rem;border:1px solid var(--line);color:var(--ink-soft);
+  }
+  .progress-list li.done{color:var(--ink);}
+  .progress-list li.done .check{background:var(--teal);border-color:var(--teal);color:#fff;}
+  #recommend-text{color:var(--ink-soft);font-size:0.92rem;}
+  #recommend-text b{color:var(--ink);font-style:italic;}
+
+  /* ---- about mini ---- */
+  .about-wrap-mini{display:grid;grid-template-columns:0.8fr 1.2fr;gap:48px;align-items:center;}
+  @media(max-width:800px){.about-wrap-mini{grid-template-columns:1fr;}}
+  .about-img-mini{border:1px solid var(--line);width:100%;height:100%;object-fit:cover;}
+  #about-p{color:var(--ink-soft);margin-bottom:14px;font-size:0.95rem;}
+  .credentials{display:flex;gap:28px;margin-top:20px;flex-wrap:wrap;}
+  .credentials div{font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--ink-soft);}
+  .credentials strong{display:block;font-family:'Archivo',sans-serif;font-size:1.3rem;color:var(--ink);font-weight:800;}
+
+  /* ---- testimonials ---- */
+  .test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  @media(max-width:960px){.test-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:640px){.test-grid{grid-template-columns:1fr;}}
+  .test-card{background:#fff;border:1px solid var(--line);padding:24px;border-radius:2px;display:flex;flex-direction:column;gap:14px;}
+  .test-card .quote{font-size:0.92rem;color:var(--ink);font-style:italic;}
+  .test-card .who{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;gap:12px;}
+  .test-card .who b{color:var(--teal);font-style:normal;}
+  .test-card .avatar{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;border:1px solid var(--line);background:var(--paper-dim);}
+
+  #loading{padding:80px 32px;text-align:center;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div id="loading">Loading your dashboard…</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div class="navbar">
+      <div class="brand">
+        <img src="logo.jpg" alt="Makis Nikolaidis logo">
+        <span><span>Makis Nikolaidis</span><span class="tag">AI Assisted Life Coach</span></span>
+      </div>
+      <div class="nav-right">
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 30" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;">
+        <clipPath id="ukc"><path d="M0,0 h60 v30 h-60 z"/></clipPath>
+        <g clip-path="url(#ukc)">
+          <path d="M0,0 h60 v30 h-60 z" fill="#00247d"/>
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" stroke-width="2"/>
+          <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+          <path d="M30,0 v30 M0,15 h60" stroke="#cf142b" stroke-width="6"/>
+        </g>
+      </svg></button>
+          <button id="btn-el" onclick="setLang('el')" title="Ελληνικά" aria-label="Ελληνικά"><svg viewBox="0 0 60 40" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;">
+        <rect width="60" height="40" fill="#0D5EAF"/>
+        <g fill="#fff">
+          <rect y="4.44" width="60" height="4.45"/>
+          <rect y="13.33" width="60" height="4.45"/>
+          <rect y="22.22" width="60" height="4.45"/>
+          <rect y="31.11" width="60" height="4.45"/>
+        </g>
+        <rect width="24" height="22.22" fill="#0D5EAF"/>
+        <rect x="9" width="6" height="22.22" fill="#fff"/>
+        <rect y="8" width="24" height="6" fill="#fff"/>
+      </svg></button>
+        </div>
+        <a href="#" id="signout-btn" class="cta-btn ghost">Sign out</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero-band">
+    <div class="wrap">
+      <span class="eyebrow" id="eyebrow-dashboard">Your dashboard</span>
+      <h1 id="welcome-heading">Welcome back</h1>
+      <p id="hero-copy">Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.</p>
+      <span class="interest-tag" id="interest-display">—</span>
+      <div class="journey" style="margin-top:26px;">
+        <div class="node"><span class="dot"></span><span class="mono">Mindset</span></div>
+        <span class="arrow"></span>
+        <div class="node"><span class="dot"></span><span class="mono">Strategy</span></div>
+        <span class="arrow"></span>
+        <div class="node"><span class="dot"></span><span class="mono">Growth</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section style="background:var(--paper-dim);">
+    <div class="wrap">
+      <div class="progress-recommend-grid">
+        <div class="panel-card">
+          <h3 id="progress-title">Your progress</h3>
+          <ul class="progress-list">
+            <li class="done"><span class="check">✓</span><span id="progress-item-1">Account created</span></li>
+            <li class="done"><span class="check">✓</span><span id="progress-item-2">Profile completed</span></li>
+            <li id="progress-item-3-wrap"><span class="check" id="progress-item-3-check">○</span><span id="progress-item-3">Choose a plan below to get started</span></li>
+          </ul>
+        </div>
+        <div class="panel-card">
+          <h3 id="recommend-title">Recommended for you</h3>
+          <p id="recommend-text">Based on what you shared, here's where many people in a similar place choose to start.</p>
+          <a href="#programs" class="cta-btn" id="recommend-cta" style="margin-top:16px;">See the plans below</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" id="eyebrow-demo">Free demo, unlocked</span>
+        <p id="demo-intro">Open the conversation bubble in the corner of this page for your free 5-minute session with the AI life coach.</p>
+      </div>
+      <div class="demo-band">
+        <h3 id="demo-h3">Five minutes. No commitment.</h3>
+        <p id="demo-p">Say hello and mention what's on your mind — the AI life coach is ready whenever you are.</p>
+        <p id="balance-line" style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--ink-soft);"></p>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--paper-dim);" id="programs">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" id="eyebrow-programs">Choose your depth</span>
+        <h2 id="programs-h2">Ready to go further?</h2>
+        <p id="programs-p">From a focused sprint to the full pairing of AI availability and in-person coaching craft.</p>
+      </div>
+      <div class="programs-grid">
+        <div class="plan">
+          <span class="price-tag" id="price-a">10€</span>
+          <span class="opt" id="opt-a">Option A</span>
+          <h3>30 <span style="font-size:1rem;" id="unit-a">minutes</span></h3>
+          <span class="sub" id="sub-a">with your AI Life Coach</span>
+          <p class="desc" id="desc-a">A focused first step. Perfect for testing the format or working through one specific, time-bound issue.</p>
+          <ul class="plan-features">
+            <li id="feat-a-1">24/7 access — start a conversation the moment you need one, day or night</li>
+            <li id="feat-a-2">Multiple sessions — use your time across as many short check-ins as you like</li>
+            <li id="feat-a-3">Session memory — the AI remembers what you covered last time, so you never start over</li>
+            <li id="feat-a-4">Action plan per session — leave every conversation with a clear next step</li>
+            <li id="feat-a-5">Voice or text — talk however feels natural</li>
+          </ul>
+          <a href="order.html?option=A" class="cta-btn ghost" id="btn-a" style="justify-content:center;border-color:var(--line-dark);color:#fff;">Start Option A</a>
+        </div>
+        <div class="plan">
+          <span class="price-tag" id="price-b">20€</span>
+          <span class="opt" id="opt-b">Option B</span>
+          <h3>3 <span style="font-size:1rem;" id="unit-b">hours</span></h3>
+          <span class="sub" id="sub-b">with your AI Life Coach</span>
+          <p class="desc" id="desc-b">Everything in Option A, plus:</p>
+          <ul class="plan-features">
+            <li id="feat-b-1">3 hours of AI Life Coach use — enough runway for a full goal cycle, not just one sitting</li>
+            <li id="feat-b-2">Session transcripts — read back through exactly what was said, any time</li>
+            <li id="feat-b-3">Cross-session summary — one synthesized outcome instead of a stack of separate chats</li>
+            <li id="feat-b-4">Recommended next steps — a forward plan for what comes after these three hours</li>
+            <li id="feat-b-5">Exportable summary — keep it, print it, or share it with your coach</li>
+          </ul>
+          <a href="order.html?option=B" class="cta-btn ghost" id="btn-b" style="justify-content:center;border-color:var(--line-dark);color:#fff;">Start Option B</a>
+        </div>
+        <div class="plan">
+          <span class="price-tag" id="price-c">190€</span>
+          <span class="opt" id="opt-c">Option C</span>
+          <h3>6 <span style="font-size:1rem;" id="unit-c">hours + 3 sessions</span></h3>
+          <span class="sub" id="sub-c">AI hours, plus 3 sessions with your certified human coach</span>
+          <p class="desc" id="desc-c">Everything in Options A &amp; B, plus:</p>
+          <ul class="plan-features">
+            <li id="feat-c-1">6 hours of AI Life Coach use — room to work through more than one goal at a time</li>
+            <li id="feat-c-2">3 private sessions with a certified human Life Coach — real conversation, real accountability</li>
+            <li id="feat-c-3">Coach-reviewed summaries — Makis reviews your AI sessions before each live meeting</li>
+            <li id="feat-c-4">Tailored action plan — built together with your coach, not just generated</li>
+            <li id="feat-c-5">Priority scheduling for your live sessions</li>
+          </ul>
+          <a href="order.html?option=C" class="cta-btn ghost" id="btn-c" style="justify-content:center;border-color:var(--line-dark);color:#fff;">Start Option C</a>
+        </div>
+        <div class="plan featured">
+          <span class="price-tag" id="price-d">Contact for customised plan</span>
+          <span class="opt" id="opt-d">Option D</span><span class="badge-inline" id="badge-d">Best value</span>
+          <h3>Unlimited <span style="font-size:1rem;" id="unit-d">/ month</span></h3>
+          <span class="sub" id="sub-d">Everything in one ongoing membership</span>
+          <p class="desc" id="desc-d">Includes everything in Options A, B &amp; C, every month:</p>
+          <ul class="plan-features">
+            <li id="feat-d-1">Unlimited AI Life Coach sessions each month — no hourly cap to think about</li>
+            <li id="feat-d-2">One live session with your human coach included every month</li>
+            <li id="feat-d-3">Ongoing accountability check-ins between sessions</li>
+            <li id="feat-d-4">Priority booking for additional live sessions</li>
+            <li id="feat-d-5">Cancel anytime — no long-term contract, no penalty</li>
+          </ul>
+          <a href="order.html?option=D" class="cta-btn" id="btn-d" style="justify-content:center;background:var(--navy);color:#fff;border-color:var(--navy);">Start Option D</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="about-wrap-mini">
+        <img class="about-img-mini" src="collage.jpg" alt="Makis Nikolaidis at his desk, in conversation, and presenting at a whiteboard" loading="lazy">
+        <div>
+          <span class="eyebrow" id="about-eyebrow">The person behind it</span>
+          <h2 id="about-h2">Makis Nikolaidis</h2>
+          <p id="about-p">I'm a certified life coach and an executive at an IT company, with 30 years spent managing and mentoring teams. This AI Assisted Life Coach is where that experience meets certified coaching frameworks — available whenever you need it, with private sessions with me built into the deeper programs.</p>
+          <div class="credentials">
+            <div><strong>30</strong><span id="cred-1">years in leadership &amp; mentoring</span></div>
+            <div><strong>1:1</strong><span id="cred-2">certified life coaching</span></div>
+            <div><strong>24/7</strong><span id="cred-3">AI availability</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--paper-dim);">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" id="test-eyebrow">In their words</span>
+        <h2 id="test-h2">What changed for the people who tried it</h2>
+        <p id="test-p">Illustrative examples of the kind of shift clients describe, shared here as a sample of the experience.</p>
+      </div>
+      <div class="test-grid" id="testimonial-grid"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ElevenLabs Conversational AI floating widget -->
+<elevenlabs-convai id="convai-widget" agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+<div id="floating-time-badge"><span class="dot"></span><span id="floating-time-text"></span></div>
+
+<script>
+  var copy = {
+    en: {
+      docTitle: 'Your dashboard — Makis Nikolaidis',
+      signOut: 'Sign out',
+      eyebrowDashboard: 'Your dashboard',
+      welcomePrefix: 'Welcome back, ',
+      heroCopy: "Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.",
+      interestPrefix: 'Focused on: ',
+      eyebrowDemo: 'Free demo, unlocked',
+      demoIntro: 'Open the conversation bubble in the corner of this page for your free 5-minute session with the AI life coach.',
+      demoH3: 'Five minutes. No commitment.',
+      demoP: "Say hello and mention what's on your mind — the AI life coach is ready whenever you are.",
+      eyebrowPrograms: 'Choose your depth',
+      programsH2: 'Ready to go further?',
+      programsP: 'From a single focused session to an ongoing membership that pairs AI availability with in-person coaching craft.',
+      badgeD: 'Best value',
+      optA: 'Option A', unitA: 'minutes', subA: 'with your AI Life Coach',
+      descA: 'A focused first step. Perfect for testing the format or working through one specific, time-bound issue.',
+      featA1: '24/7 access — start a conversation the moment you need one, day or night',
+      featA2: 'Multiple sessions — use your time across as many short check-ins as you like',
+      featA3: 'Session memory — the AI remembers what you covered last time, so you never start over',
+      featA4: 'Action plan per session — leave every conversation with a clear next step',
+      featA5: 'Voice or text — talk however feels natural',
+      btnA: 'Start Option A',
+      optB: 'Option B', unitB: 'hours', subB: 'with your AI Life Coach',
+      descB: 'Everything in Option A, plus:',
+      featB1: '3 hours of AI Life Coach use — enough runway for a full goal cycle, not just one sitting',
+      featB2: 'Session transcripts — read back through exactly what was said, any time',
+      featB3: 'Cross-session summary — one synthesized outcome instead of a stack of separate chats',
+      featB4: 'Recommended next steps — a forward plan for what comes after these three hours',
+      featB5: 'Exportable summary — keep it, print it, or share it with your coach',
+      btnB: 'Start Option B',
+      optC: 'Option C', unitC: 'hours + 3 sessions', subC: 'AI hours, plus 3 sessions with your certified human coach',
+      descC: 'Everything in Options A & B, plus:',
+      featC1: '6 hours of AI Life Coach use — room to work through more than one goal at a time',
+      featC2: '3 private sessions with a certified human Life Coach — real conversation, real accountability',
+      featC3: 'Coach-reviewed summaries — Makis reviews your AI sessions before each live meeting',
+      featC4: 'Tailored action plan — built together with your coach, not just generated',
+      featC5: 'Priority scheduling for your live sessions',
+      btnC: 'Start Option C',
+      optD: 'Option D', unitD: '/ month', subD: 'Everything in one ongoing membership',
+      descD: 'Includes everything in Options A, B & C, every month:',
+      priceD: 'Contact for customised plan',
+      featD1: 'Unlimited AI Life Coach sessions each month — no hourly cap to think about',
+      featD2: 'One live session with your human coach included every month',
+      featD3: 'Ongoing accountability check-ins between sessions',
+      featD4: 'Priority booking for additional live sessions',
+      featD5: 'Cancel anytime — no long-term contract, no penalty',
+      btnD: 'Start Option D',
+      loading: 'Loading your dashboard…',
+      progressTitle: 'Your progress',
+      progressItem1: 'Account created',
+      progressItem2: 'Profile completed',
+      progressItem3Done: 'Plan selected',
+      progressItem3Pending: 'Choose a plan below to get started',
+      recommendTitle: 'Recommended for you',
+      recommendPrefix: 'Based on what you shared — “',
+      recommendSuffix: '” — here\'s where many people in a similar place choose to start:',
+      recommendFallback: "You've told us what's on your mind — take a look at the options below and pick the depth that fits.",
+      recommendCta: 'See {opt} below',
+      aboutEyebrow: 'The person behind it',
+      aboutH2: 'Makis Nikolaidis',
+      aboutP: "I'm a certified life coach and an executive at an IT company, with 30 years spent managing and mentoring teams. This AI Assisted Life Coach is where that experience meets certified coaching frameworks — available whenever you need it, with private sessions with me built into the deeper programs.",
+      cred1: 'years in leadership & mentoring', cred2: 'certified life coaching', cred3: 'AI availability',
+      testEyebrow: 'In their words',
+      testH2: 'What changed for the people who tried it',
+      testP: 'Illustrative examples of the kind of shift clients describe, shared here as a sample of the experience.'
+    },
+    el: {
+      docTitle: 'Ο πίνακάς σας — Makis Nikolaidis',
+      signOut: 'Αποσύνδεση',
+      eyebrowDashboard: 'Ο πίνακάς σας',
+      welcomePrefix: 'Καλώς ήρθες ξανά, ',
+      heroCopy: "Το δωρεάν demo σας είναι ξεκλειδωμένο παρακάτω — ανοίξτε τη φούσκα συνομιλίας όποτε θέλετε. Σημειώσαμε επίσης σε τι εστιάζετε ώστε οι επόμενες συνεδρίες να συνεχίσουν από εκεί.",
+      interestPrefix: 'Εστίαση σε: ',
+      eyebrowDemo: 'Δωρεάν demo, ξεκλειδωμένο',
+      demoIntro: 'Ανοίξτε τη φούσκα συνομιλίας στη γωνία αυτής της σελίδας για τη δωρεάν συνεδρία 5 λεπτών με τον AI life coach.',
+      demoH3: 'Πέντε λεπτά. Καμία δέσμευση.',
+      demoP: 'Πείτε ένα γεια και αναφέρετε τι σας απασχολεί — ο AI life coach είναι έτοιμος όποτε είστε έτοιμοι κι εσείς.',
+      eyebrowPrograms: 'Επιλέξτε το βάθος σας',
+      programsH2: 'Έτοιμοι να πάτε παραπέρα;',
+      programsP: 'Από μία εστιασμένη συνεδρία μέχρι μια συνεχή συνδρομή που συνδυάζει τη διαθεσιμότητα του AI με την τέχνη της δια ζώσης καθοδήγησης.',
+      badgeD: 'Καλύτερη αξία',
+      optA: 'Επιλογή Α', unitA: 'λεπτά', subA: 'με τον AI Life Coach σας',
+      descA: 'Ένα εστιασμένο πρώτο βήμα. Ιδανικό για να δοκιμάσετε τη μορφή ή να δουλέψετε ένα συγκεκριμένο, χρονικά περιορισμένο θέμα.',
+      featA1: 'Πρόσβαση 24/7 — ξεκινήστε μια συζήτηση τη στιγμή που τη χρειάζεστε, μέρα ή νύχτα',
+      featA2: 'Πολλαπλές συνεδρίες — χρησιμοποιήστε τον χρόνο σας σε όσα σύντομα check-in θέλετε',
+      featA3: 'Μνήμη συνεδρίας — το AI θυμάται τι συζητήσατε την προηγούμενη φορά, ώστε να μην ξεκινάτε από την αρχή',
+      featA4: 'Πλάνο δράσης ανά συνεδρία — φεύγετε από κάθε συζήτηση με ένα ξεκάθαρο επόμενο βήμα',
+      featA5: 'Φωνή ή κείμενο — μιλήστε με όποιον τρόπο σας βολεύει',
+      btnA: 'Ξεκινήστε την Επιλογή Α',
+      optB: 'Επιλογή Β', unitB: 'ώρες', subB: 'με τον AI Life Coach σας',
+      descB: 'Όλα όσα περιλαμβάνει η Επιλογή Α, και επιπλέον:',
+      featB1: '3 ώρες χρήσης του AI Life Coach — αρκετός χρόνος για έναν πλήρη κύκλο στόχου, όχι μόνο μία συνεδρία',
+      featB2: 'Απομαγνητοφωνήσεις συνεδριών — διαβάστε ξανά ό,τι ειπώθηκε, όποτε θέλετε',
+      featB3: 'Συγκεντρωτική περίληψη — ένα ενιαίο αποτέλεσμα αντί για ξεχωριστές συζητήσεις',
+      featB4: 'Προτεινόμενα επόμενα βήματα — ένα πλάνο για μετά τις τρεις ώρες',
+      featB5: 'Εξαγώγιμη περίληψη — κρατήστε τη, εκτυπώστε τη ή μοιραστείτε τη με τον coach σας',
+      btnB: 'Ξεκινήστε την Επιλογή Β',
+      optC: 'Επιλογή Γ', unitC: 'ώρες + 3 συνεδρίες', subC: 'Ώρες AI, και 3 συνεδρίες με τον πιστοποιημένο coach σας',
+      descC: 'Όλα όσα περιλαμβάνουν οι Επιλογές Α & Β, και επιπλέον:',
+      featC1: '6 ώρες χρήσης του AI Life Coach — χώρος για περισσότερους από έναν στόχους',
+      featC2: '3 ιδιωτικές συνεδρίες με πιστοποιημένο coach — πραγματική συζήτηση, πραγματική λογοδοσία',
+      featC3: 'Περιλήψεις με ανασκόπηση από τον coach — ο Μάκης ανασκοπεί τις συνεδρίες AI πριν από κάθε δια ζώσης συνάντηση',
+      featC4: 'Εξατομικευμένο πλάνο δράσης — χτισμένο μαζί με τον coach σας',
+      featC5: 'Προτεραιότητα στον προγραμματισμό των δια ζώσης συνεδριών σας',
+      btnC: 'Ξεκινήστε την Επιλογή Γ',
+      optD: 'Επιλογή Δ', unitD: '/ μήνα', subD: 'Όλα σε μία συνεχή συνδρομή',
+      descD: 'Περιλαμβάνει όλα όσα προσφέρουν οι Επιλογές Α, Β & Γ, κάθε μήνα:',
+      priceD: 'Επικοινωνήστε για εξατομικευμένο πλάνο',
+      featD1: 'Απεριόριστες συνεδρίες AI Life Coach κάθε μήνα — χωρίς όριο ωρών να υπολογίζετε',
+      featD2: 'Μία δια ζώσης συνεδρία με τον coach σας κάθε μήνα, συμπεριλαμβάνεται',
+      featD3: 'Συνεχής λογοδοσία ανάμεσα στις συνεδρίες',
+      featD4: 'Προτεραιότητα κράτησης για επιπλέον δια ζώσης συνεδρίες',
+      featD5: 'Ακυρώστε όποτε θέλετε — χωρίς μακροχρόνιο συμβόλαιο, χωρίς ποινή',
+      btnD: 'Ξεκινήστε την Επιλογή Δ',
+      loading: 'Φόρτωση του πίνακά σας…',
+      progressTitle: 'Η πρόοδός σας',
+      progressItem1: 'Ο λογαριασμός δημιουργήθηκε',
+      progressItem2: 'Το προφίλ ολοκληρώθηκε',
+      progressItem3Done: 'Επιλέξατε πλάνο',
+      progressItem3Pending: 'Επιλέξτε ένα πλάνο παρακάτω για να ξεκινήσετε',
+      recommendTitle: 'Προτείνεται για εσάς',
+      recommendPrefix: 'Με βάση αυτά που μας είπατε — «',
+      recommendSuffix: '» — να πού επιλέγουν συνήθως να ξεκινήσουν όσοι βρίσκονται σε παρόμοιο σημείο:',
+      recommendFallback: 'Μας είπατε τι σας απασχολεί — δείτε τις επιλογές παρακάτω και διαλέξτε το βάθος που σας ταιριάζει.',
+      recommendCta: 'Δείτε την {opt} παρακάτω',
+      aboutEyebrow: 'Το πρόσωπο πίσω από αυτό',
+      aboutH2: 'Μάκης Νικολαΐδης',
+      aboutP: 'Είμαι πιστοποιημένος life coach και στέλεχος σε εταιρεία πληροφορικής, με 30 χρόνια διαχείρισης και mentoring ομάδων. Αυτός ο AI Assisted Life Coach είναι εκεί όπου αυτή η εμπειρία συναντά πιστοποιημένα πλαίσια coaching — διαθέσιμος όποτε τον χρειάζεστε, με ιδιωτικές συνεδρίες μαζί μου ενσωματωμένες στα βαθύτερα προγράμματα.',
+      cred1: 'χρόνια σε ηγεσία & mentoring', cred2: 'πιστοποιημένο life coaching', cred3: 'διαθεσιμότητα AI',
+      testEyebrow: 'Με τα δικά τους λόγια',
+      testH2: 'Τι άλλαξε για όσους το δοκίμασαν',
+      testP: 'Ενδεικτικά παραδείγματα της αλλαγής που περιγράφουν οι πελάτες, ως δείγμα της εμπειρίας.'
+    }
+  };
+
+
+  var currentLang = 'en';
+  var profileData = null;
+
+  function applyStaticCopy(lang){
+    document.getElementById('doc-title').textContent = copy[lang].docTitle;
+    document.title = copy[lang].docTitle;
+    document.getElementById('signout-btn').textContent = copy[lang].signOut;
+    document.getElementById('eyebrow-dashboard').textContent = copy[lang].eyebrowDashboard;
+    document.getElementById('hero-copy').textContent = copy[lang].heroCopy;
+    document.getElementById('eyebrow-demo').textContent = copy[lang].eyebrowDemo;
+    document.getElementById('demo-intro').textContent = copy[lang].demoIntro;
+    document.getElementById('demo-h3').textContent = copy[lang].demoH3;
+    document.getElementById('demo-p').textContent = copy[lang].demoP;
+    document.getElementById('eyebrow-programs').textContent = copy[lang].eyebrowPrograms;
+    document.getElementById('programs-h2').textContent = copy[lang].programsH2;
+    document.getElementById('programs-p').textContent = copy[lang].programsP;
+
+    document.getElementById('opt-a').textContent = copy[lang].optA;
+    document.getElementById('unit-a').textContent = copy[lang].unitA;
+    document.getElementById('sub-a').textContent = copy[lang].subA;
+    document.getElementById('desc-a').textContent = copy[lang].descA;
+    document.getElementById('feat-a-1').textContent = copy[lang].featA1;
+    document.getElementById('feat-a-2').textContent = copy[lang].featA2;
+    document.getElementById('feat-a-3').textContent = copy[lang].featA3;
+    document.getElementById('feat-a-4').textContent = copy[lang].featA4;
+    document.getElementById('feat-a-5').textContent = copy[lang].featA5;
+    document.getElementById('btn-a').textContent = copy[lang].btnA;
+
+    document.getElementById('opt-b').textContent = copy[lang].optB;
+    document.getElementById('unit-b').textContent = copy[lang].unitB;
+    document.getElementById('sub-b').textContent = copy[lang].subB;
+    document.getElementById('desc-b').textContent = copy[lang].descB;
+    document.getElementById('feat-b-1').textContent = copy[lang].featB1;
+    document.getElementById('feat-b-2').textContent = copy[lang].featB2;
+    document.getElementById('feat-b-3').textContent = copy[lang].featB3;
+    document.getElementById('feat-b-4').textContent = copy[lang].featB4;
+    document.getElementById('feat-b-5').textContent = copy[lang].featB5;
+    document.getElementById('btn-b').textContent = copy[lang].btnB;
+
+    document.getElementById('opt-c').textContent = copy[lang].optC;
+    document.getElementById('unit-c').textContent = copy[lang].unitC;
+    document.getElementById('sub-c').textContent = copy[lang].subC;
+    document.getElementById('desc-c').textContent = copy[lang].descC;
+    document.getElementById('feat-c-1').textContent = copy[lang].featC1;
+    document.getElementById('feat-c-2').textContent = copy[lang].featC2;
+    document.getElementById('feat-c-3').textContent = copy[lang].featC3;
+    document.getElementById('feat-c-4').textContent = copy[lang].featC4;
+    document.getElementById('feat-c-5').textContent = copy[lang].featC5;
+    document.getElementById('btn-c').textContent = copy[lang].btnC;
+
+    document.getElementById('badge-d').textContent = copy[lang].badgeD;
+    document.getElementById('opt-d').textContent = copy[lang].optD;
+    document.getElementById('unit-d').textContent = copy[lang].unitD;
+    document.getElementById('sub-d').textContent = copy[lang].subD;
+    document.getElementById('price-d').textContent = copy[lang].priceD;
+    document.getElementById('desc-d').textContent = copy[lang].descD;
+    document.getElementById('feat-d-1').textContent = copy[lang].featD1;
+    document.getElementById('feat-d-2').textContent = copy[lang].featD2;
+    document.getElementById('feat-d-3').textContent = copy[lang].featD3;
+    document.getElementById('feat-d-4').textContent = copy[lang].featD4;
+    document.getElementById('feat-d-5').textContent = copy[lang].featD5;
+    document.getElementById('btn-d').textContent = copy[lang].btnD;
+
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-el').classList.toggle('active', lang === 'el');
+
+    document.getElementById('progress-title').textContent = copy[lang].progressTitle;
+    document.getElementById('progress-item-1').textContent = copy[lang].progressItem1;
+    document.getElementById('progress-item-2').textContent = copy[lang].progressItem2;
+    document.getElementById('recommend-title').textContent = copy[lang].recommendTitle;
+    document.getElementById('about-eyebrow').textContent = copy[lang].aboutEyebrow;
+    document.getElementById('about-h2').textContent = copy[lang].aboutH2;
+    document.getElementById('about-p').textContent = copy[lang].aboutP;
+    document.getElementById('cred-1').textContent = copy[lang].cred1;
+    document.getElementById('cred-2').textContent = copy[lang].cred2;
+    document.getElementById('cred-3').textContent = copy[lang].cred3;
+    document.getElementById('test-eyebrow').textContent = copy[lang].testEyebrow;
+    document.getElementById('test-h2').textContent = copy[lang].testH2;
+    document.getElementById('test-p').textContent = copy[lang].testP;
+  }
+
+  function applyDynamicCopy(lang){
+    if (!profileData) return;
+    var firstName = profileData.fullName.split(' ')[0];
+    document.getElementById('welcome-heading').textContent = copy[lang].welcomePrefix + firstName;
+    document.getElementById('interest-display').textContent = copy[lang].interestPrefix + profileData.interests;
+    updateProgressItem3(lang);
+    updateRecommendation(lang);
+  }
+
+  var hasSelectedPlan = false;
+
+  function updateProgressItem3(lang){
+    var wrap = document.getElementById('progress-item-3-wrap');
+    var textEl = document.getElementById('progress-item-3');
+    var checkEl = document.getElementById('progress-item-3-check');
+    if (hasSelectedPlan){
+      wrap.classList.add('done');
+      checkEl.textContent = '✓';
+      textEl.textContent = copy[lang].progressItem3Done;
+    } else {
+      wrap.classList.remove('done');
+      checkEl.textContent = '○';
+      textEl.textContent = copy[lang].progressItem3Pending;
+    }
+  }
+
+  function recommendOptionCode(interestsText){
+    var text = (interestsText || '').toLowerCase();
+    var rules = [
+      { code: 'C', words: ['stress','anxiety','burnout','overwhelm','relationship','family','άγχος','εξουθένωση','σχέση','οικογένεια'] },
+      { code: 'A', words: ['habit','routine','discipline','procrastinat','συνήθεια','ρουτίνα','αναβλητικ'] },
+      { code: 'B', words: ['career','job','professional','promotion','goal','δουλειά','καριέρα','επαγγελ','στόχ'] }
+    ];
+    for (var i = 0; i < rules.length; i++){
+      for (var j = 0; j < rules[i].words.length; j++){
+        if (text.indexOf(rules[i].words[j]) !== -1) return rules[i].code;
+      }
+    }
+    return null;
+  }
+
+  function updateRecommendation(lang){
+    var code = recommendOptionCode(profileData.interests);
+    var textEl = document.getElementById('recommend-text');
+    var cta = document.getElementById('recommend-cta');
+    if (code){
+      var optName = copy[lang]['opt' + code];
+      textEl.innerHTML = copy[lang].recommendPrefix + '<b>' + profileData.interests + '</b>' + copy[lang].recommendSuffix;
+      cta.textContent = copy[lang].recommendCta.replace('{opt}', optName);
+    } else {
+      textEl.textContent = copy[lang].recommendFallback;
+      cta.textContent = copy[lang].recommendCta.replace('{opt}', lang === 'el' ? 'τις επιλογές' : 'the options');
+    }
+  }
+
+  function checkSelectedPlan(uid){
+    return db.collection('orders').where('uid', '==', uid).limit(1).get().then(function(snapshot){
+      hasSelectedPlan = !snapshot.empty;
+    }).catch(function(){ hasSelectedPlan = false; });
+  }
+
+  // ---- testimonials (reused from the main site, with generated illustrative avatars) ----
+  var testimonials = [
+    {en:{q:"I kept pushing my Monday habit to Tuesday, every single week. Three weeks in with the AI check-ins, that stopped being a thing.",n:"Elena V.",r:"Marketing Director"},
+     el:{q:"Ανέβαλα τη συνήθεια της Δευτέρας κάθε εβδομάδα. Μετά από τρεις εβδομάδες με τα check-in του AI, αυτό απλά σταμάτησε να συμβαίνει.",n:"Έλενα Β.",r:"Marketing Director"}},
+    {en:{q:"The 10-hour option got me from &ldquo;I should probably change jobs&rdquo; to an actual plan with dates on it.",n:"Dimitris K.",r:"Product Manager"},
+     el:{q:"Η επιλογή των 10 ωρών με πήγε από το &laquo;μάλλον πρέπει να αλλάξω δουλειά&raquo; σε ένα πραγματικό πλάνο με ημερομηνίες.",n:"Δημήτρης Κ.",r:"Product Manager"}},
+    {en:{q:"Having something to talk to at midnight, when the spiral starts, made more difference than I expected it to.",n:"Sofia P.",r:"Founder"},
+     el:{q:"Το να έχω κάτι να μιλήσω τα μεσάνυχτα, όταν ξεκινάει η σπείρα σκέψεων, έκανε μεγαλύτερη διαφορά απ' όσο περίμενα.",n:"Σοφία Π.",r:"Founder"}},
+    {en:{q:"My session with Makis after the AI weeks felt like showing up already warmed up. We skipped straight to the real conversation.",n:"Andreas T.",r:"Engineering Lead"},
+     el:{q:"Η συνεδρία μου με τον Μάκη μετά τις εβδομάδες με το AI ήταν σαν να έφτανα ήδη έτοιμος. Πήγαμε κατευθείαν στην ουσιαστική συζήτηση.",n:"Ανδρέας Τ.",r:"Engineering Lead"}},
+    {en:{q:"The free demo alone talked me into the full program. Five minutes was enough to feel the difference from a generic chatbot.",n:"Katerina M.",r:"HR Business Partner"},
+     el:{q:"Το δωρεάν demo από μόνο του με έπεισε για το πλήρες πρόγραμμα. Πέντε λεπτά ήταν αρκετά για να νιώσω τη διαφορά από ένα απλό chatbot.",n:"Κατερίνα Μ.",r:"HR Business Partner"}},
+    {en:{q:"I went in for career stuff and ended up sorting out how I actually want my weeks to look. Not what I expected, exactly what I needed.",n:"Nikos R.",r:"Consultant"},
+     el:{q:"Πήγα για επαγγελματικά θέματα και κατέληξα να ξεκαθαρίσω πώς θέλω πραγματικά να μοιάζουν οι εβδομάδες μου. Όχι αυτό που περίμενα, ακριβώς αυτό που χρειαζόμουν.",n:"Νίκος Ρ.",r:"Consultant"}}
+  ];
+
+  function avatarUrl(name){
+    return 'https://api.dicebear.com/9.x/notionists/svg?seed=' + encodeURIComponent(name) + '&backgroundColor=f1f1f2';
+  }
+
+  function renderTestimonials(lang){
+    var grid = document.getElementById('testimonial-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    testimonials.forEach(function(t){
+      var d = t[lang];
+      var enName = t.en.n;
+      var card = document.createElement('div');
+      card.className = 'test-card';
+      card.innerHTML = '<p class="quote">&ldquo;' + d.q + '&rdquo;</p>' +
+        '<div class="who"><img class="avatar" src="' + avatarUrl(enName) + '" alt="' + d.n + '" loading="lazy">' +
+        '<span><b>' + d.n + '</b> — ' + d.r + '</span></div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function setLang(lang){
+    currentLang = lang;
+    applyStaticCopy(lang);
+    applyDynamicCopy(lang);
+    renderTestimonials(lang);
+    try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}
+  }
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
+    authDomain: "lifecoach-authentication.firebaseapp.com",
+    projectId: "lifecoach-authentication",
+    storageBucket: "lifecoach-authentication.firebasestorage.app",
+    messagingSenderId: "937227852104",
+    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
+    measurementId: "G-DSKHMB7D5S"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      window.location.href = 'signin.html';
+      return;
+    }
+
+    db.collection('users').doc(user.uid).get().then(function(doc) {
+      if (!doc.exists || !doc.data().fullName || !doc.data().interests) {
+        window.location.href = 'profile.html';
+        return;
+      }
+      profileData = doc.data();
+
+      checkSelectedPlan(user.uid).then(function(){
+        var saved = 'en';
+        try{ saved = localStorage.getItem('waypoint-lang') || 'en'; }catch(e){}
+        setLang(saved);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+
+        setupTimeMetering(user.uid);
+      });
+    }).catch(function(err) {
+      document.getElementById('loading').textContent = 'Could not load your dashboard: ' + err.message;
+    });
+  });
+
+  // ---- purchased-time tracking (client-side, no backend) ----
+  // remainingSeconds / isUnlimited are set by hand in the Firestore console
+  // after you confirm a payment. This code only ever counts DOWN from
+  // whatever value is there — see firestore.rules for the guardrail that
+  // stops a client write from increasing it.
+  var meterState = { remainingSeconds: 0, isUnlimited: false, ticking: false };
+  var tickInterval = null;
+  var lastSavedAt = 0;
+
+  function formatHMS(totalSeconds) {
+    totalSeconds = Math.max(0, Math.floor(totalSeconds));
+    var h = Math.floor(totalSeconds / 3600);
+    var m = Math.floor((totalSeconds % 3600) / 60);
+    var s = totalSeconds % 60;
+    var mm = (m < 10 ? '0' : '') + m;
+    var ss = (s < 10 ? '0' : '') + s;
+    return h > 0 ? (h + ':' + mm + ':' + ss) : (mm + ':' + ss);
+  }
+
+  function renderBalanceLine() {
+    var text, floatingText;
+    if (meterState.isUnlimited) {
+      text = currentLang === 'el' ? 'Απεριόριστη χρήση ενεργή' : 'Unlimited access active';
+      floatingText = currentLang === 'el' ? 'Απεριόριστο' : 'Unlimited';
+    } else if (meterState.remainingSeconds > 0) {
+      text = (currentLang === 'el' ? 'Διαθέσιμος χρόνος: ' : 'Time remaining: ') + formatHMS(meterState.remainingSeconds);
+      floatingText = formatHMS(meterState.remainingSeconds);
+    } else {
+      text = currentLang === 'el'
+        ? 'Δεν έχει απομείνει χρόνος — αγοράστε χρόνο για να συνεχίσετε.'
+        : 'No time remaining — purchase time to continue.';
+      floatingText = currentLang === 'el' ? 'Χωρίς χρόνο' : 'No time left';
+    }
+
+    var el = document.getElementById('balance-line');
+    if (el) { el.textContent = text; el.style.color = ''; el.style.fontWeight = ''; }
+
+    var badge = document.getElementById('floating-time-badge');
+    var badgeText = document.getElementById('floating-time-text');
+    if (badge && badgeText) {
+      badgeText.textContent = floatingText;
+      badge.classList.add('visible');
+      badge.classList.remove('warning');
+    }
+  }
+
+  function applyWidgetVisibility() {
+    var widget = document.getElementById('convai-widget');
+    if (!widget) return;
+    var allowed = meterState.isUnlimited || meterState.remainingSeconds > 0;
+    widget.style.display = allowed ? '' : 'none';
+  }
+
+  function saveBalance(uid, forceEvenIfSame) {
+    var now = Date.now();
+    if (!forceEvenIfSame && now - lastSavedAt < 5000) return; // throttle writes to ~1 per 5s
+    lastSavedAt = now;
+    db.collection('users').doc(uid).update({
+      remainingSeconds: Math.max(0, Math.floor(meterState.remainingSeconds))
+    }).catch(function(err) {
+      console.error('Could not save remaining time:', err);
+    });
+  }
+
+  function setupTimeMetering(uid) {
+    db.collection('users').doc(uid).onSnapshot(function(doc) {
+      var data = doc.data() || {};
+      var isUnlimited = !!data.isUnlimited && data.unlimitedUntil &&
+        data.unlimitedUntil.toMillis() > Date.now();
+      // Don't let a snapshot update stomp on an in-progress local countdown —
+      // only resync from Firestore when no call is currently running.
+      if (!meterState.ticking) {
+        meterState.remainingSeconds = data.remainingSeconds || 0;
+        meterState.isUnlimited = isUnlimited;
+        renderBalanceLine();
+        applyWidgetVisibility();
+      }
+    });
+
+    var widget = document.getElementById('convai-widget');
+    if (!widget) return;
+
+    // Best-effort only — different widget versions have exposed this method
+    // inconsistently, so it's a bonus if it works, not something relied on.
+    // The balance-line message below is what actually, reliably tells the
+    // person their time is up regardless of widget internals.
+    function tryAutoEnd() {
+      if (typeof widget.endConversation === 'function') {
+        try { widget.endConversation(); } catch (e) { /* ignore */ }
+      }
+    }
+
+    function showTimesUp() {
+      var el = document.getElementById('balance-line');
+      var msg = currentLang === 'el'
+        ? '⏱ Ο χρόνος σας έληξε — παρακαλούμε ολοκληρώστε την κλήση.'
+        : "⏱ You're out of time — please wrap up the call.";
+      if (el) {
+        el.textContent = msg;
+        el.style.color = '#B3261E';
+        el.style.fontWeight = '600';
+      }
+      var badge = document.getElementById('floating-time-badge');
+      var badgeText = document.getElementById('floating-time-text');
+      if (badge && badgeText) {
+        badgeText.textContent = currentLang === 'el' ? 'Ο χρόνος έληξε' : "Time's up";
+        badge.classList.add('visible', 'warning');
+      }
+    }
+
+    widget.addEventListener('conversationStarted', function() {
+      if (!meterState.isUnlimited && meterState.remainingSeconds <= 0) {
+        showTimesUp();
+        tryAutoEnd();
+        return;
+      }
+      meterState.ticking = true;
+      tickInterval = setInterval(function() {
+        if (meterState.isUnlimited) return;
+        meterState.remainingSeconds -= 1;
+        renderBalanceLine();
+        saveBalance(uid, false);
+        if (meterState.remainingSeconds <= 0) {
+          meterState.remainingSeconds = 0;
+          saveBalance(uid, true);
+          showTimesUp();
+          tryAutoEnd();
+        }
+      }, 1000);
+    });
+
+    widget.addEventListener('conversationEnded', function() {
+      meterState.ticking = false;
+      if (tickInterval) clearInterval(tickInterval);
+      tickInterval = null;
+      var el = document.getElementById('balance-line');
+      if (el) { el.style.color = ''; el.style.fontWeight = ''; }
+      var badge = document.getElementById('floating-time-badge');
+      if (badge) badge.classList.remove('warning');
+      if (!meterState.isUnlimited) saveBalance(uid, true); // final, un-throttled write
+      applyWidgetVisibility(); // re-runs renderBalanceLine-driven state via onSnapshot next tick
+      renderBalanceLine(); // immediate refresh so the badge/line reflect the just-saved balance right away
+    });
+  }
+
+  document.getElementById('signout-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    auth.signOut().then(function() {
+      if (window.opener && !window.opener.closed) {
+        window.opener.location.href = 'index.html';
+        window.close();
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
