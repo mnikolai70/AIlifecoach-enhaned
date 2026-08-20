@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
 
 <style>
   :root{
@@ -239,15 +238,12 @@
   <section id="demo">
     <div class="wrap">
       <div class="sec-head">
-        <span class="eyebrow" id="eyebrow-demo">Talk to your AI life coach</span>
+        <span class="eyebrow" id="eyebrow-demo">Free demo, unlocked</span>
+        <p id="demo-intro">Open the conversation bubble in the corner of this page for your free 5-minute session with the AI life coach.</p>
       </div>
       <div class="demo-band">
-        <h3 id="session-balance-label">Loading your balance…</h3>
+        <h3 id="demo-h3">Five minutes. No commitment.</h3>
         <p id="demo-p">Say hello and mention what's on your mind — the AI life coach is ready whenever you are.</p>
-        <button type="button" id="start-session-btn" class="cta-btn" style="margin-top:18px;" disabled>Start session</button>
-        <button type="button" id="end-session-btn" class="cta-btn ghost" style="margin-top:18px;display:none;">End session</button>
-        <p id="session-status" style="margin-top:10px;font-size:0.85rem;color:var(--ink-soft);"></p>
-        <p id="no-balance-note" style="margin-top:10px;font-size:0.85rem;display:none;"></p>
       </div>
     </div>
   </section>
@@ -354,9 +350,9 @@
   </section>
 </div>
 
-<!-- Session start/stop now goes through Cloud Functions (see startSessionAndConnect below)
-     instead of the public <elevenlabs-convai> widget, so purchased time can be enforced
-     server-side. Requires the agent's Security tab set to "require authentication". -->
+<!-- ElevenLabs Conversational AI floating widget -->
+<elevenlabs-convai agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 
 <script>
   var copy = {
@@ -367,10 +363,10 @@
       welcomePrefix: 'Welcome back, ',
       heroCopy: "Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.",
       interestPrefix: 'Focused on: ',
-      eyebrowDemo: 'Talk to your AI life coach',
+      eyebrowDemo: 'Free demo, unlocked',
+      demoIntro: 'Open the conversation bubble in the corner of this page for your free 5-minute session with the AI life coach.',
+      demoH3: 'Five minutes. No commitment.',
       demoP: "Say hello and mention what's on your mind — the AI life coach is ready whenever you are.",
-      startSessionBtn: 'Start session',
-      endSessionBtn: 'End session',
       eyebrowPrograms: 'Choose your depth',
       programsH2: 'Ready to go further?',
       programsP: 'From a single focused session to an ongoing membership that pairs AI availability with in-person coaching craft.',
@@ -434,10 +430,10 @@
       welcomePrefix: 'Καλώς ήρθες ξανά, ',
       heroCopy: "Το δωρεάν demo σας είναι ξεκλειδωμένο παρακάτω — ανοίξτε τη φούσκα συνομιλίας όποτε θέλετε. Σημειώσαμε επίσης σε τι εστιάζετε ώστε οι επόμενες συνεδρίες να συνεχίσουν από εκεί.",
       interestPrefix: 'Εστίαση σε: ',
-      eyebrowDemo: 'Μιλήστε με τον AI life coach σας',
+      eyebrowDemo: 'Δωρεάν demo, ξεκλειδωμένο',
+      demoIntro: 'Ανοίξτε τη φούσκα συνομιλίας στη γωνία αυτής της σελίδας για τη δωρεάν συνεδρία 5 λεπτών με τον AI life coach.',
+      demoH3: 'Πέντε λεπτά. Καμία δέσμευση.',
       demoP: 'Πείτε ένα γεια και αναφέρετε τι σας απασχολεί — ο AI life coach είναι έτοιμος όποτε είστε έτοιμοι κι εσείς.',
-      startSessionBtn: 'Έναρξη συνεδρίας',
-      endSessionBtn: 'Τερματισμός συνεδρίας',
       eyebrowPrograms: 'Επιλέξτε το βάθος σας',
       programsH2: 'Έτοιμοι να πάτε παραπέρα;',
       programsP: 'Από μία εστιασμένη συνεδρία μέχρι μια συνεχή συνδρομή που συνδυάζει τη διαθεσιμότητα του AI με την τέχνη της δια ζώσης καθοδήγησης.',
@@ -507,9 +503,9 @@
     document.getElementById('eyebrow-dashboard').textContent = copy[lang].eyebrowDashboard;
     document.getElementById('hero-copy').textContent = copy[lang].heroCopy;
     document.getElementById('eyebrow-demo').textContent = copy[lang].eyebrowDemo;
+    document.getElementById('demo-intro').textContent = copy[lang].demoIntro;
+    document.getElementById('demo-h3').textContent = copy[lang].demoH3;
     document.getElementById('demo-p').textContent = copy[lang].demoP;
-    document.getElementById('start-session-btn').textContent = copy[lang].startSessionBtn;
-    document.getElementById('end-session-btn').textContent = copy[lang].endSessionBtn;
     document.getElementById('eyebrow-programs').textContent = copy[lang].eyebrowPrograms;
     document.getElementById('programs-h2').textContent = copy[lang].programsH2;
     document.getElementById('programs-p').textContent = copy[lang].programsP;
@@ -695,7 +691,6 @@
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
-  var functions = firebase.functions();
 
   auth.onAuthStateChanged(function(user) {
     if (!user) {
@@ -717,131 +712,10 @@
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-
-        watchBalance(user.uid);
       });
     }).catch(function(err) {
       document.getElementById('loading').textContent = 'Could not load your dashboard: ' + err.message;
     });
-  });
-
-  // ---- balance display + session start/stop ----
-  // remainingSeconds / isUnlimited are only ever written by Cloud Functions
-  // (see functions/index.js) — this page only reads them.
-  var latestBalance = { remainingSeconds: 0, isUnlimited: false };
-  var activeConversation = null;
-  var countdownTimer = null;
-
-  function formatHMS(totalSeconds) {
-    totalSeconds = Math.max(0, Math.floor(totalSeconds));
-    var h = Math.floor(totalSeconds / 3600);
-    var m = Math.floor((totalSeconds % 3600) / 60);
-    var s = totalSeconds % 60;
-    var mm = (m < 10 ? '0' : '') + m;
-    var ss = (s < 10 ? '0' : '') + s;
-    return h > 0 ? (h + ':' + mm + ':' + ss) : (mm + ':' + ss);
-  }
-
-  function watchBalance(uid) {
-    db.collection('users').doc(uid).onSnapshot(function(doc) {
-      var data = doc.data() || {};
-      var isUnlimited = !!data.isUnlimited && data.unlimitedUntil &&
-        data.unlimitedUntil.toMillis() > Date.now();
-      latestBalance = { remainingSeconds: data.remainingSeconds || 0, isUnlimited: isUnlimited };
-
-      var label = document.getElementById('session-balance-label');
-      var startBtn = document.getElementById('start-session-btn');
-      var noBalanceNote = document.getElementById('no-balance-note');
-
-      if (activeConversation) return; // don't rewrite the label mid-call, the countdown owns it
-
-      if (isUnlimited) {
-        label.textContent = currentLang === 'el' ? 'Απεριόριστη χρήση ενεργή' : 'Unlimited access active';
-        startBtn.disabled = false;
-        noBalanceNote.style.display = 'none';
-      } else if (latestBalance.remainingSeconds > 0) {
-        label.textContent = (currentLang === 'el' ? 'Διαθέσιμος χρόνος: ' : 'Time remaining: ') + formatHMS(latestBalance.remainingSeconds);
-        startBtn.disabled = false;
-        noBalanceNote.style.display = 'none';
-      } else {
-        label.textContent = currentLang === 'el' ? 'Δεν έχει απομείνει χρόνος' : 'No time remaining';
-        startBtn.disabled = true;
-        noBalanceNote.textContent = currentLang === 'el'
-          ? 'Αγοράστε χρόνο παρακάτω για να συνεχίσετε.'
-          : 'Purchase time below to continue.';
-        noBalanceNote.style.display = 'block';
-      }
-    });
-  }
-
-  function startCountdownDisplay(seconds) {
-    var label = document.getElementById('session-balance-label');
-    var remaining = seconds;
-    label.textContent = (currentLang === 'el' ? 'Χρόνος συνεδρίας: ' : 'Session time left: ') + formatHMS(remaining);
-    countdownTimer = setInterval(function() {
-      remaining -= 1;
-      label.textContent = (currentLang === 'el' ? 'Χρόνος συνεδρίας: ' : 'Session time left: ') + formatHMS(remaining);
-      if (remaining <= 0) clearInterval(countdownTimer);
-    }, 1000);
-  }
-
-  function stopCountdownDisplay() {
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-
-  document.getElementById('start-session-btn').addEventListener('click', function() {
-    var startBtn = document.getElementById('start-session-btn');
-    var statusEl = document.getElementById('session-status');
-    startBtn.disabled = true;
-    statusEl.textContent = currentLang === 'el' ? 'Σύνδεση…' : 'Connecting…';
-
-    var startSessionFn = functions.httpsCallable('startSession');
-    startSessionFn().then(function(result) {
-      var signedUrl = result.data.signedUrl;
-      var maxDurationSeconds = result.data.maxDurationSeconds;
-
-      return import('https://esm.sh/@elevenlabs/client').then(function(mod) {
-        return mod.Conversation.startSession({
-          signedUrl: signedUrl,
-          overrides: { conversation: { max_duration_seconds: maxDurationSeconds } },
-          onConnect: function() {
-            statusEl.textContent = currentLang === 'el' ? 'Συνδεδεμένος' : 'Connected';
-            document.getElementById('end-session-btn').style.display = '';
-            startBtn.style.display = 'none';
-            startCountdownDisplay(maxDurationSeconds);
-          },
-          onDisconnect: function() {
-            activeConversation = null;
-            stopCountdownDisplay();
-            document.getElementById('end-session-btn').style.display = 'none';
-            startBtn.style.display = '';
-            statusEl.textContent = currentLang === 'el'
-              ? 'Η συνεδρία ολοκληρώθηκε — ενημέρωση υπολοίπου…'
-              : 'Session ended — updating your balance…';
-            // The actual balance deduction happens server-side via the
-            // ElevenLabs post-call webhook, a few seconds after this fires.
-          },
-          onError: function(message) {
-            statusEl.textContent = (currentLang === 'el' ? 'Σφάλμα: ' : 'Error: ') + message;
-          }
-        });
-      });
-    }).then(function(conversation) {
-      activeConversation = conversation;
-    }).catch(function(err) {
-      startBtn.disabled = false;
-      var code = err && err.code;
-      if (code === 'failed-precondition') {
-        statusEl.textContent = currentLang === 'el' ? 'Δεν έχει απομείνει χρόνος.' : 'No time remaining.';
-      } else {
-        statusEl.textContent = (currentLang === 'el' ? 'Δεν ήταν δυνατή η έναρξη: ' : 'Could not start session: ') + (err && err.message ? err.message : err);
-      }
-    });
-  });
-
-  document.getElementById('end-session-btn').addEventListener('click', function() {
-    if (activeConversation) activeConversation.endSession();
   });
 
   document.getElementById('signout-btn').addEventListener('click', function(e) {
