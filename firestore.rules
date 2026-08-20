@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // First write for a brand-new doc (before the signup trigger has run):
+      // only profile fields, never balance fields.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && !('remainingSeconds' in request.resource.data)
+        && !('isUnlimited' in request.resource.data)
+        && !('unlimitedUntil' in request.resource.data)
+        && !('liveSessionsRemaining' in request.resource.data);
+
+      // Ongoing edits from profile.html: only these fields may change.
+      // remainingSeconds / isUnlimited / unlimitedUntil / liveSessionsRemaining
+      // are only ever written by Cloud Functions using the Admin SDK, which
+      // bypasses these rules entirely.
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['fullName', 'interests', 'email', 'updatedAt']);
+    }
+
+    match /orders/{orderId} {
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.uid
+        && !('fulfilled' in request.resource.data);
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      // Status changes (pending_verification -> paid) happen from the
+      // Firebase console or the Admin SDK only — never from the client.
+      allow update, delete: if false;
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow write: if false; // Cloud Functions only
+    }
+  }
+}
