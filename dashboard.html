@@ -156,6 +156,23 @@
   .test-card .avatar{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;border:1px solid var(--line);background:var(--paper-dim);}
 
   #loading{padding:80px 32px;text-align:center;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+
+  /* ---- usage / demo countdown timer ---- */
+  .usage-timer{
+    position:fixed;right:24px;bottom:104px;z-index:9998;
+    background:var(--navy);color:#fff;border-radius:2px;
+    padding:14px 18px;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    cursor:default;
+  }
+  .usage-timer.clickable{cursor:pointer;}
+  .usage-timer .ut-label{font-family:'JetBrains Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);margin-bottom:4px;}
+  .usage-timer .ut-time{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.35rem;line-height:1;}
+  .usage-timer .ut-sub{font-size:0.72rem;color:rgba(255,255,255,0.65);margin-top:6px;line-height:1.3;}
+  .usage-timer .ut-bar{height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin-top:10px;overflow:hidden;}
+  .usage-timer .ut-fill{height:100%;background:var(--teal);width:100%;transition:width 1s linear;}
+  .usage-timer.ut-empty .ut-fill{background:#E4572E;}
+  .usage-timer.ut-empty .ut-time{color:#E4572E;}
+  @media(max-width:640px){.usage-timer{right:12px;bottom:96px;min-width:150px;padding:11px 14px;}}
 </style>
 </head>
 <body>
@@ -351,8 +368,16 @@
   </section>
 </div>
 
+<!-- Usage / demo countdown timer -->
+<div class="usage-timer" id="usage-timer" style="display:none;">
+  <div class="ut-label" id="ut-label">Free demo</div>
+  <div class="ut-time" id="ut-time">5:00</div>
+  <div class="ut-sub" id="ut-sub"></div>
+  <div class="ut-bar"><div class="ut-fill" id="ut-fill"></div></div>
+</div>
+
 <!-- ElevenLabs Conversational AI floating widget -->
-<elevenlabs-convai agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
+<elevenlabs-convai id="ai-coach-widget" agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 
 <script>
@@ -361,6 +386,10 @@
       docTitle: 'Your dashboard — Makis Nikolaidis',
       signOut: 'Sign out',
       contactLink: 'Contact',
+      usageDemoLabel: 'Free demo',
+      usagePlanLabel: 'Your plan · Option',
+      usageUnlimitedLabel: 'Your plan · Unlimited',
+      usageExhausted: "You're out of minutes — upgrade for more.",
       eyebrowDashboard: 'Your dashboard',
       welcomePrefix: 'Welcome back, ',
       heroCopy: "Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.",
@@ -429,6 +458,10 @@
       docTitle: 'Ο πίνακάς σας — Makis Nikolaidis',
       signOut: 'Αποσύνδεση',
       contactLink: 'Επικοινωνία',
+      usageDemoLabel: 'Δωρεάν demo',
+      usagePlanLabel: 'Το πλάνο σας · Επιλογή',
+      usageUnlimitedLabel: 'Το πλάνο σας · Απεριόριστο',
+      usageExhausted: 'Τελείωσαν τα λεπτά σας — αναβαθμίστε για περισσότερα.',
       eyebrowDashboard: 'Ο πίνακάς σας',
       welcomePrefix: 'Καλώς ήρθες ξανά, ',
       heroCopy: "Το δωρεάν demo σας είναι ξεκλειδωμένο παρακάτω — ανοίξτε τη φούσκα συνομιλίας όποτε θέλετε. Σημειώσαμε επίσης σε τι εστιάζετε ώστε οι επόμενες συνεδρίες να συνεχίσουν από εκεί.",
@@ -639,6 +672,137 @@
     }).catch(function(){ hasSelectedPlan = false; });
   }
 
+  // ---- usage / demo countdown timer ----
+  var OPTION_MINUTES = { A: 30, B: 180, C: 360 }; // D = unlimited, handled separately
+  var usageState = null;   // {mode:'demo'|'plan'|'unlimited', uid, optionCode, totalSeconds, usedSeconds, usedSecondsAtStart}
+  var usageTickInterval = null;
+  var usageSessionStartTs = null;
+
+  function fetchActivePlan(uid){
+    return db.collection('orders')
+      .where('uid', '==', uid)
+      .where('status', '==', 'paid')
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get()
+      .then(function(snapshot){
+        return snapshot.empty ? null : snapshot.docs[0].data();
+      })
+      .catch(function(){ return null; });
+  }
+
+  function initUsageState(uid, userData, order){
+    if (order && order.option === 'D'){
+      usageState = { mode: 'unlimited', uid: uid };
+      return;
+    }
+    if (order && OPTION_MINUTES[order.option]){
+      var code = order.option;
+      var totalSeconds = OPTION_MINUTES[code] * 60;
+      var storedUsed = (userData.planOptionCode === code) ? (userData.planUsedSeconds || 0) : 0;
+      usageState = { mode: 'plan', uid: uid, optionCode: code, totalSeconds: totalSeconds, usedSeconds: storedUsed, usedSecondsAtStart: storedUsed };
+      return;
+    }
+    var demoUsed = Math.min(userData.demoUsedSeconds || 0, 300);
+    usageState = { mode: 'demo', uid: uid, totalSeconds: 300, usedSeconds: demoUsed, usedSecondsAtStart: demoUsed };
+  }
+
+  function formatTime(totalSecondsRemaining){
+    var m = Math.floor(totalSecondsRemaining / 60);
+    var s = totalSecondsRemaining % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function applyUsageLabel(lang){
+    if (!usageState) return;
+    var labelEl = document.getElementById('ut-label');
+    if (usageState.mode === 'unlimited'){
+      labelEl.textContent = copy[lang].usageUnlimitedLabel;
+    } else if (usageState.mode === 'plan'){
+      labelEl.textContent = copy[lang].usagePlanLabel + ' ' + usageState.optionCode;
+    } else {
+      labelEl.textContent = copy[lang].usageDemoLabel;
+    }
+  }
+
+  function renderUsageTimer(){
+    var box = document.getElementById('usage-timer');
+    if (!usageState){ box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    var barWrap = box.querySelector('.ut-bar');
+    if (usageState.mode === 'unlimited'){
+      document.getElementById('ut-time').textContent = '∞';
+      barWrap.style.display = 'none';
+      box.classList.remove('ut-empty');
+      return;
+    }
+    barWrap.style.display = '';
+    var remaining = Math.max(0, usageState.totalSeconds - usageState.usedSeconds);
+    document.getElementById('ut-time').textContent = formatTime(remaining);
+    var pct = usageState.totalSeconds > 0 ? Math.max(0, (remaining / usageState.totalSeconds) * 100) : 0;
+    document.getElementById('ut-fill').style.width = pct + '%';
+    var empty = remaining <= 0;
+    box.classList.toggle('ut-empty', empty);
+    var subEl = document.getElementById('ut-sub');
+    subEl.textContent = empty ? copy[currentLang].usageExhausted : '';
+    box.classList.toggle('clickable', empty);
+  }
+
+  function persistUsage(elapsedSeconds){
+    if (!usageState || usageState.mode === 'unlimited') return;
+    var newUsed = usageState.usedSecondsAtStart + elapsedSeconds;
+    usageState.usedSecondsAtStart = newUsed;
+    usageState.usedSeconds = newUsed;
+    renderUsageTimer();
+    var update = {};
+    if (usageState.mode === 'demo'){
+      update.demoUsedSeconds = Math.min(newUsed, usageState.totalSeconds);
+    } else {
+      update.planUsedSeconds = Math.min(newUsed, usageState.totalSeconds);
+      update.planOptionCode = usageState.optionCode;
+    }
+    db.collection('users').doc(usageState.uid).set(update, { merge: true }).catch(function(){});
+  }
+
+  function wireUsageWidget(){
+    var widget = document.getElementById('ai-coach-widget');
+    if (!widget) return;
+
+    widget.addEventListener('conversationStarted', function(){
+      if (!usageState) return;
+      if (usageState.mode !== 'unlimited' && (usageState.totalSeconds - usageState.usedSeconds) <= 0){
+        widget.endConversation();
+        renderUsageTimer();
+        return;
+      }
+      usageSessionStartTs = Date.now();
+      if (usageState.mode === 'unlimited') return;
+      usageTickInterval = setInterval(function(){
+        var elapsed = Math.floor((Date.now() - usageSessionStartTs) / 1000);
+        usageState.usedSeconds = usageState.usedSecondsAtStart + elapsed;
+        renderUsageTimer();
+        if (usageState.totalSeconds - usageState.usedSeconds <= 0){
+          widget.endConversation();
+        }
+      }, 1000);
+    });
+
+    widget.addEventListener('conversationEnded', function(){
+      if (usageTickInterval){ clearInterval(usageTickInterval); usageTickInterval = null; }
+      if (!usageSessionStartTs || !usageState || usageState.mode === 'unlimited'){ usageSessionStartTs = null; return; }
+      var elapsedSeconds = Math.floor((Date.now() - usageSessionStartTs) / 1000);
+      usageSessionStartTs = null;
+      persistUsage(elapsedSeconds);
+    });
+
+    document.getElementById('usage-timer').addEventListener('click', function(){
+      if (usageState && usageState.mode !== 'unlimited' && usageState.totalSeconds - usageState.usedSeconds <= 0){
+        var target = document.getElementById('programs');
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
   // ---- testimonials (reused from the main site, with generated illustrative avatars) ----
   var testimonials = [
     {en:{q:"I kept pushing my Monday habit to Tuesday, every single week. Three weeks in with the AI check-ins, that stopped being a thing.",n:"Elena V.",r:"Marketing Director"},
@@ -680,6 +844,8 @@
     applyStaticCopy(lang);
     applyDynamicCopy(lang);
     renderTestimonials(lang);
+    applyUsageLabel(lang);
+    renderUsageTimer();
     try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}
   }
 
@@ -710,6 +876,11 @@
       profileData = doc.data();
 
       checkSelectedPlan(user.uid).then(function(){
+        return fetchActivePlan(user.uid);
+      }).then(function(order){
+        initUsageState(user.uid, profileData, order);
+        wireUsageWidget();
+
         var saved = 'en';
         try{ saved = localStorage.getItem('waypoint-lang') || 'en'; }catch(e){}
         setLang(saved);
