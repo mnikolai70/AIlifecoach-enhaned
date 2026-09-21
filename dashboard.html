@@ -82,25 +82,6 @@
   .demo-band h3{font-size:1.3rem;margin-bottom:10px;}
   .demo-band p{color:var(--ink-soft);}
 
-  #floating-time-badge{
-    position:fixed;left:20px;bottom:20px;z-index:9999;
-    background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,0.14);
-    padding:10px 16px;border-radius:24px;
-    font-family:'JetBrains Mono',monospace;font-size:0.82rem;
-    box-shadow:0 6px 20px rgba(0,0,0,0.25);
-    display:none;align-items:center;gap:8px;
-    transition:background 0.2s ease;
-  }
-  #floating-time-badge.visible{display:flex;}
-  #floating-time-badge.warning{background:#B3261E;}
-  #floating-time-badge .dot{
-    width:7px;height:7px;border-radius:50%;background:var(--brass);flex:none;
-  }
-  #floating-time-badge.warning .dot{background:#fff;}
-  @media (max-width:600px){
-    #floating-time-badge{left:12px;bottom:12px;font-size:0.76rem;padding:8px 13px;}
-  }
-
   .programs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
   @media(max-width:1100px){.programs-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:640px){.programs-grid{grid-template-columns:1fr;}}
@@ -184,10 +165,10 @@
 <div id="app" style="display:none;">
   <header>
     <div class="navbar">
-      <div class="brand">
+      <a href="index.html#top" class="brand" style="text-decoration:none;color:inherit;">
         <img src="logo.jpg" alt="Makis Nikolaidis logo">
         <span><span>Makis Nikolaidis</span><span class="tag">AI Assisted Life Coach</span></span>
-      </div>
+      </a>
       <div class="nav-right">
         <div class="lang-toggle" role="group" aria-label="Language">
           <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 30" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;">
@@ -213,6 +194,7 @@
         <rect y="8" width="24" height="6" fill="#fff"/>
       </svg></button>
         </div>
+        <a href="index.html#contact" id="contact-link" class="cta-btn ghost">Contact</a>
         <a href="#" id="signout-btn" class="cta-btn ghost">Sign out</a>
       </div>
     </div>
@@ -263,7 +245,6 @@
       <div class="demo-band">
         <h3 id="demo-h3">Five minutes. No commitment.</h3>
         <p id="demo-p">Say hello and mention what's on your mind — the AI life coach is ready whenever you are.</p>
-        <p id="balance-line" style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--ink-soft);"></p>
       </div>
     </div>
   </section>
@@ -371,16 +352,15 @@
 </div>
 
 <!-- ElevenLabs Conversational AI floating widget -->
-<elevenlabs-convai id="convai-widget" agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
+<elevenlabs-convai agent-id="agent_1001ky9scz2qemaayvswg2cs07ns"></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
-
-<div id="floating-time-badge"><span class="dot"></span><span id="floating-time-text"></span></div>
 
 <script>
   var copy = {
     en: {
       docTitle: 'Your dashboard — Makis Nikolaidis',
       signOut: 'Sign out',
+      contactLink: 'Contact',
       eyebrowDashboard: 'Your dashboard',
       welcomePrefix: 'Welcome back, ',
       heroCopy: "Your free demo is unlocked below — open the conversation bubble any time. We've also noted what you're focused on so future sessions can pick up from there.",
@@ -448,6 +428,7 @@
     el: {
       docTitle: 'Ο πίνακάς σας — Makis Nikolaidis',
       signOut: 'Αποσύνδεση',
+      contactLink: 'Επικοινωνία',
       eyebrowDashboard: 'Ο πίνακάς σας',
       welcomePrefix: 'Καλώς ήρθες ξανά, ',
       heroCopy: "Το δωρεάν demo σας είναι ξεκλειδωμένο παρακάτω — ανοίξτε τη φούσκα συνομιλίας όποτε θέλετε. Σημειώσαμε επίσης σε τι εστιάζετε ώστε οι επόμενες συνεδρίες να συνεχίσουν από εκεί.",
@@ -522,6 +503,7 @@
     document.getElementById('doc-title').textContent = copy[lang].docTitle;
     document.title = copy[lang].docTitle;
     document.getElementById('signout-btn').textContent = copy[lang].signOut;
+    document.getElementById('contact-link').textContent = copy[lang].contactLink;
     document.getElementById('eyebrow-dashboard').textContent = copy[lang].eyebrowDashboard;
     document.getElementById('hero-copy').textContent = copy[lang].heroCopy;
     document.getElementById('eyebrow-demo').textContent = copy[lang].eyebrowDemo;
@@ -734,158 +716,11 @@
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-
-        setupTimeMetering(user.uid);
       });
     }).catch(function(err) {
       document.getElementById('loading').textContent = 'Could not load your dashboard: ' + err.message;
     });
   });
-
-  // ---- purchased-time tracking (client-side, no backend) ----
-  // remainingSeconds / isUnlimited are set by hand in the Firestore console
-  // after you confirm a payment. This code only ever counts DOWN from
-  // whatever value is there — see firestore.rules for the guardrail that
-  // stops a client write from increasing it.
-  var meterState = { remainingSeconds: 0, isUnlimited: false, ticking: false };
-  var tickInterval = null;
-  var lastSavedAt = 0;
-
-  function formatHMS(totalSeconds) {
-    totalSeconds = Math.max(0, Math.floor(totalSeconds));
-    var h = Math.floor(totalSeconds / 3600);
-    var m = Math.floor((totalSeconds % 3600) / 60);
-    var s = totalSeconds % 60;
-    var mm = (m < 10 ? '0' : '') + m;
-    var ss = (s < 10 ? '0' : '') + s;
-    return h > 0 ? (h + ':' + mm + ':' + ss) : (mm + ':' + ss);
-  }
-
-  function renderBalanceLine() {
-    var text, floatingText;
-    if (meterState.isUnlimited) {
-      text = currentLang === 'el' ? 'Απεριόριστη χρήση ενεργή' : 'Unlimited access active';
-      floatingText = currentLang === 'el' ? 'Απεριόριστο' : 'Unlimited';
-    } else if (meterState.remainingSeconds > 0) {
-      text = (currentLang === 'el' ? 'Διαθέσιμος χρόνος: ' : 'Time remaining: ') + formatHMS(meterState.remainingSeconds);
-      floatingText = formatHMS(meterState.remainingSeconds);
-    } else {
-      text = currentLang === 'el'
-        ? 'Δεν έχει απομείνει χρόνος — αγοράστε χρόνο για να συνεχίσετε.'
-        : 'No time remaining — purchase time to continue.';
-      floatingText = currentLang === 'el' ? 'Χωρίς χρόνο' : 'No time left';
-    }
-
-    var el = document.getElementById('balance-line');
-    if (el) { el.textContent = text; el.style.color = ''; el.style.fontWeight = ''; }
-
-    var badge = document.getElementById('floating-time-badge');
-    var badgeText = document.getElementById('floating-time-text');
-    if (badge && badgeText) {
-      badgeText.textContent = floatingText;
-      badge.classList.add('visible');
-      badge.classList.remove('warning');
-    }
-  }
-
-  function applyWidgetVisibility() {
-    var widget = document.getElementById('convai-widget');
-    if (!widget) return;
-    var allowed = meterState.isUnlimited || meterState.remainingSeconds > 0;
-    widget.style.display = allowed ? '' : 'none';
-  }
-
-  function saveBalance(uid, forceEvenIfSame) {
-    var now = Date.now();
-    if (!forceEvenIfSame && now - lastSavedAt < 5000) return; // throttle writes to ~1 per 5s
-    lastSavedAt = now;
-    db.collection('users').doc(uid).update({
-      remainingSeconds: Math.max(0, Math.floor(meterState.remainingSeconds))
-    }).catch(function(err) {
-      console.error('Could not save remaining time:', err);
-    });
-  }
-
-  function setupTimeMetering(uid) {
-    db.collection('users').doc(uid).onSnapshot(function(doc) {
-      var data = doc.data() || {};
-      var isUnlimited = !!data.isUnlimited && data.unlimitedUntil &&
-        data.unlimitedUntil.toMillis() > Date.now();
-      // Don't let a snapshot update stomp on an in-progress local countdown —
-      // only resync from Firestore when no call is currently running.
-      if (!meterState.ticking) {
-        meterState.remainingSeconds = data.remainingSeconds || 0;
-        meterState.isUnlimited = isUnlimited;
-        renderBalanceLine();
-        applyWidgetVisibility();
-      }
-    });
-
-    var widget = document.getElementById('convai-widget');
-    if (!widget) return;
-
-    // Best-effort only — different widget versions have exposed this method
-    // inconsistently, so it's a bonus if it works, not something relied on.
-    // The balance-line message below is what actually, reliably tells the
-    // person their time is up regardless of widget internals.
-    function tryAutoEnd() {
-      if (typeof widget.endConversation === 'function') {
-        try { widget.endConversation(); } catch (e) { /* ignore */ }
-      }
-    }
-
-    function showTimesUp() {
-      var el = document.getElementById('balance-line');
-      var msg = currentLang === 'el'
-        ? '⏱ Ο χρόνος σας έληξε — παρακαλούμε ολοκληρώστε την κλήση.'
-        : "⏱ You're out of time — please wrap up the call.";
-      if (el) {
-        el.textContent = msg;
-        el.style.color = '#B3261E';
-        el.style.fontWeight = '600';
-      }
-      var badge = document.getElementById('floating-time-badge');
-      var badgeText = document.getElementById('floating-time-text');
-      if (badge && badgeText) {
-        badgeText.textContent = currentLang === 'el' ? 'Ο χρόνος έληξε' : "Time's up";
-        badge.classList.add('visible', 'warning');
-      }
-    }
-
-    widget.addEventListener('conversationStarted', function() {
-      if (!meterState.isUnlimited && meterState.remainingSeconds <= 0) {
-        showTimesUp();
-        tryAutoEnd();
-        return;
-      }
-      meterState.ticking = true;
-      tickInterval = setInterval(function() {
-        if (meterState.isUnlimited) return;
-        meterState.remainingSeconds -= 1;
-        renderBalanceLine();
-        saveBalance(uid, false);
-        if (meterState.remainingSeconds <= 0) {
-          meterState.remainingSeconds = 0;
-          saveBalance(uid, true);
-          showTimesUp();
-          tryAutoEnd();
-        }
-      }, 1000);
-    });
-
-    widget.addEventListener('conversationEnded', function() {
-      meterState.ticking = false;
-      if (tickInterval) clearInterval(tickInterval);
-      tickInterval = null;
-      var el = document.getElementById('balance-line');
-      if (el) { el.style.color = ''; el.style.fontWeight = ''; }
-      var badge = document.getElementById('floating-time-badge');
-      if (badge) badge.classList.remove('warning');
-      if (!meterState.isUnlimited) saveBalance(uid, true); // final, un-throttled write
-      applyWidgetVisibility(); // re-runs renderBalanceLine-driven state via onSnapshot next tick
-      renderBalanceLine(); // immediate refresh so the badge/line reflect the just-saved balance right away
-    });
-  }
 
   document.getElementById('signout-btn').addEventListener('click', function(e) {
     e.preventDefault();

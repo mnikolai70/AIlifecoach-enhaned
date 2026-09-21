@@ -72,10 +72,11 @@
 <body>
 
   <div class="top-row">
-    <div class="brand">
+    <a href="index.html#top" class="brand" style="text-decoration:none;color:inherit;">
       <img src="logo.jpg" alt="Makis Nikolaidis logo">
       <span>Makis Nikolaidis</span>
-    </div>
+    </a>
+    <a href="index.html#contact" id="contact-link" style="color:var(--ink-soft);text-decoration:none;font-size:0.9rem;margin-right:4px;">Contact</a>
     <div class="lang-toggle" role="group" aria-label="Language">
       <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 30" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;">
         <clipPath id="ukc"><path d="M0,0 h60 v30 h-60 z"/></clipPath>
@@ -131,7 +132,8 @@
       interestsPlaceholder: 'e.g. career direction, building better habits, work-life balance…',
       submit: 'Continue to my dashboard',
       saving: 'Saving…',
-      errorPrefix: 'Could not save your profile: '
+      errorPrefix: 'Could not save your profile: ',
+      contactLink: 'Contact'
     },
     el: {
       docTitle: 'Το προφίλ σας — Makis Nikolaidis',
@@ -143,7 +145,8 @@
       interestsPlaceholder: 'π.χ. επαγγελματική κατεύθυνση, χτίσιμο καλύτερων συνηθειών, ισορροπία ζωής-εργασίας…',
       submit: 'Συνέχεια στον πίνακά μου',
       saving: 'Αποθήκευση…',
-      errorPrefix: 'Δεν ήταν δυνατή η αποθήκευση του προφίλ σας: '
+      errorPrefix: 'Δεν ήταν δυνατή η αποθήκευση του προφίλ σας: ',
+      contactLink: 'Επικοινωνία'
     }
   };
   var currentLang = 'en';
@@ -159,6 +162,7 @@
     document.getElementById('label-interests').textContent = copy[lang].labelInterests;
     document.getElementById('interests').placeholder = copy[lang].interestsPlaceholder;
     document.getElementById('submit-btn').textContent = copy[lang].submit;
+    document.getElementById('contact-link').textContent = copy[lang].contactLink;
     document.getElementById('btn-en').classList.toggle('active', lang === 'en');
     document.getElementById('btn-el').classList.toggle('active', lang === 'el');
     try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}

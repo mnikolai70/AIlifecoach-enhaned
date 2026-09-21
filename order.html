@@ -98,15 +98,16 @@
 <div id="app" style="display:none;">
   <header>
     <div class="navbar">
-      <div class="brand">
+      <a href="index.html#top" class="brand" style="text-decoration:none;color:inherit;">
         <img src="logo.jpg" alt="Makis Nikolaidis logo">
         <span>Makis Nikolaidis</span>
-      </div>
+      </a>
       <div class="nav-right">
         <div class="lang-toggle" role="group" aria-label="Language">
           <button id="btn-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 30" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;"><clipPath id="ukc"><path d="M0,0 h60 v30 h-60 z"/></clipPath><g clip-path="url(#ukc)"><path d="M0,0 h60 v30 h-60 z" fill="#00247d"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" stroke-width="2"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#cf142b" stroke-width="6"/></g></svg></button>
           <button id="btn-el" onclick="setLang('el')" title="Ελληνικά" aria-label="Ελληνικά"><svg viewBox="0 0 60 40" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;"><rect width="60" height="40" fill="#0D5EAF"/><g fill="#fff"><rect y="4.44" width="60" height="4.45"/><rect y="13.33" width="60" height="4.45"/><rect y="22.22" width="60" height="4.45"/><rect y="31.11" width="60" height="4.45"/></g><rect width="24" height="22.22" fill="#0D5EAF"/><rect x="9" width="6" height="22.22" fill="#fff"/><rect y="8" width="24" height="6" fill="#fff"/></svg></button>
         </div>
+        <a href="index.html#contact" id="contact-link" class="cta-btn ghost">Contact</a>
         <a href="dashboard.html" class="cta-btn ghost" id="back-link">Back to dashboard</a>
       </div>
     </div>
@@ -230,7 +231,7 @@
   var copy = {
     en: {
       docTitle: 'Complete your order — Makis Nikolaidis',
-      eyebrowOrder: 'Your order', backLink: 'Back to dashboard',
+      eyebrowOrder: 'Your order', backLink: 'Back to dashboard', contactLink: 'Contact',
       formTitle: 'Your details', paymentTitle: 'Payment method',
       labelName: 'Full name', labelAddress: 'Address', labelPhone: 'Phone number', labelEmail: 'Email', labelComment: 'Comment (optional)',
       tabBank: 'Bank transfer', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Card',
@@ -255,7 +256,7 @@
     },
     el: {
       docTitle: 'Ολοκλήρωση παραγγελίας — Makis Nikolaidis',
-      eyebrowOrder: 'Η παραγγελία σας', backLink: 'Πίσω στον πίνακά μου',
+      eyebrowOrder: 'Η παραγγελία σας', backLink: 'Πίσω στον πίνακά μου', contactLink: 'Επικοινωνία',
       formTitle: 'Τα στοιχεία σας', paymentTitle: 'Τρόπος πληρωμής',
       labelName: 'Ονοματεπώνυμο', labelAddress: 'Διεύθυνση', labelPhone: 'Τηλέφωνο', labelEmail: 'Email', labelComment: 'Σχόλιο (προαιρετικό)',
       tabBank: 'Τραπεζικό έμβασμα', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Κάρτα',
@@ -295,6 +296,7 @@
     document.title = c.docTitle;
     document.getElementById('eyebrow-order').textContent = c.eyebrowOrder;
     document.getElementById('back-link').textContent = c.backLink;
+    document.getElementById('contact-link').textContent = c.contactLink;
     document.getElementById('form-title').textContent = c.formTitle;
     document.getElementById('payment-title').textContent = c.paymentTitle;
     document.getElementById('label-name').textContent = c.labelName;
