@@ -264,6 +264,13 @@
   .plan.featured .opt{color:var(--navy);}
   .plan h3{font-size:1.7rem;color:#fff;}
   .plan.featured h3{color:var(--navy);}
+  .plan-price{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1.3rem;color:var(--brass);
+    margin-top:-6px;
+  }
+  .plan.featured .plan-price{color:var(--navy);}
+  .plan-price-hint{font-size:0.82rem;color:rgba(255,255,255,0.55);font-style:italic;}
+  .plan.featured .plan-price-hint{color:rgba(20,26,43,0.6);}
   .plan .sub{font-size:0.86rem;color:rgba(255,255,255,0.6);}
   .plan.featured .sub{color:rgba(20,26,43,0.7);}
   .plan p.desc{color:rgba(255,255,255,0.75);font-size:0.88rem;}
@@ -752,6 +759,8 @@
       <div class="plan">
         <span class="opt mono i18n" data-en="Option A" data-el="Επιλογή Α">Option A</span>
         <h3>30 <span style="font-size:1rem;" class="i18n" data-en="minutes" data-el="λεπτά">minutes</span></h3>
+        <div class="plan-price" style="display:none;">10€</div>
+        <div class="plan-price-hint i18n" data-en="Log in to see pricing" data-el="Συνδεθείτε για να δείτε την τιμή">Log in to see pricing</div>
         <span class="sub i18n" data-en="with your AI Life Coach" data-el="με τον AI Life Coach σας">with your AI Life Coach</span>
         <p class="desc i18n"
           data-en="A focused first step. Perfect for testing the format or working through one specific, time-bound issue."
@@ -776,6 +785,8 @@
       <div class="plan">
         <span class="opt mono i18n" data-en="Option B" data-el="Επιλογή Β">Option B</span>
         <h3>3 <span style="font-size:1rem;" class="i18n" data-en="hours" data-el="ώρες">hours</span></h3>
+        <div class="plan-price" style="display:none;">20€</div>
+        <div class="plan-price-hint i18n" data-en="Log in to see pricing" data-el="Συνδεθείτε για να δείτε την τιμή">Log in to see pricing</div>
         <span class="sub i18n" data-en="with your AI Life Coach" data-el="με τον AI Life Coach σας">with your AI Life Coach</span>
         <p class="desc i18n" data-en="Everything in Option A, plus:" data-el="Όλα όσα περιλαμβάνει η Επιλογή Α, και επιπλέον:">Everything in Option A, plus:</p>
         <ul class="plan-features">
@@ -796,6 +807,8 @@
       <div class="plan">
         <span class="opt mono i18n" data-en="Option C" data-el="Επιλογή Γ">Option C</span>
         <h3>6 <span style="font-size:1rem;" class="i18n" data-en="hours + 3 sessions" data-el="ώρες + 3 συνεδρίες">hours + 3 sessions</span></h3>
+        <div class="plan-price" style="display:none;">190€</div>
+        <div class="plan-price-hint i18n" data-en="Log in to see pricing" data-el="Συνδεθείτε για να δείτε την τιμή">Log in to see pricing</div>
         <span class="sub i18n" data-en="AI hours, plus 3 sessions with your certified human coach" data-el="Ώρες AI, και 3 συνεδρίες με τον πιστοποιημένο coach σας">AI hours, plus 3 sessions with your certified human coach</span>
         <p class="desc i18n" data-en="Everything in Options A &amp; B, plus:" data-el="Όλα όσα περιλαμβάνουν οι Επιλογές Α &amp; Β, και επιπλέον:">Everything in Options A &amp; B, plus:</p>
         <ul class="plan-features">
@@ -817,6 +830,8 @@
         <span class="badge i18n" data-en="Best value" data-el="Καλύτερη αξία">Best value</span>
         <span class="opt mono i18n" data-en="Option D" data-el="Επιλογή Δ">Option D</span>
         <h3>Unlimited <span style="font-size:1rem;" class="i18n" data-en="/ month" data-el="/ μήνα">/ month</span></h3>
+        <div class="plan-price i18n" data-en="Contact for customised plan" data-el="Επικοινωνήστε για εξατομικευμένο πλάνο" style="font-size:1.1rem;display:none;">Contact for customised plan</div>
+        <div class="plan-price-hint i18n" data-en="Log in to see pricing" data-el="Συνδεθείτε για να δείτε την τιμή">Log in to see pricing</div>
         <span class="sub i18n" data-en="Everything in one ongoing membership" data-el="Όλα σε μία συνεχή συνδρομή">Everything in one ongoing membership</span>
         <p class="desc i18n" data-en="Includes everything in Options A, B &amp; C, every month:" data-el="Περιλαμβάνει όλα όσα προσφέρουν οι Επιλογές Α, Β &amp; Γ, κάθε μήνα:">Includes everything in Options A, B &amp; C, every month:</p>
         <ul class="plan-features">
@@ -1445,6 +1460,11 @@
   wireUsageWidget();
 
   // ---- central auth-state orchestrator ----
+  function setPricingVisible(visible){
+    document.querySelectorAll('.plan-price').forEach(function(el){ el.style.display = visible ? '' : 'none'; });
+    document.querySelectorAll('.plan-price-hint').forEach(function(el){ el.style.display = visible ? 'none' : ''; });
+  }
+
   auth.onAuthStateChanged(function(user){
     var authButtons = document.getElementById('auth-buttons');
     var avatarWrap = document.getElementById('avatar-wrap');
@@ -1458,6 +1478,7 @@
       coachSection.style.display = 'none';
       widget.style.display = 'none';
       verifyBanner.style.display = 'none';
+      setPricingVisible(false);
       if (usageUnsubscribe){ usageUnsubscribe(); usageUnsubscribe = null; }
       usageState = null;
       return;
@@ -1467,6 +1488,7 @@
     avatarWrap.style.display = 'block';
     coachSection.style.display = 'block';
     widget.style.display = '';
+    setPricingVisible(true);
     document.getElementById('avatar-img').src = 'https://api.dicebear.com/9.x/notionists/svg?seed=' + encodeURIComponent(user.uid) + '&backgroundColor=f1f1f2';
     verifyBanner.style.display = user.emailVerified ? 'none' : 'block';
 
