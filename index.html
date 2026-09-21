@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <style>
   :root{
     --paper:#FFFFFF;
@@ -315,6 +319,91 @@
   .contact-status.error{color:#B3261E;}
   .contact-status.success{color:#2E7D32;}
   a.brand{text-decoration:none;}
+
+  /* ---- avatar + dropdown ---- */
+  .avatar-menu{
+    position:absolute;top:48px;right:0;background:#fff;border:1px solid var(--line);
+    border-radius:2px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;
+    display:flex;flex-direction:column;padding:6px;
+  }
+  .avatar-menu button{
+    display:block;width:100%;text-align:left;background:none;border:none;
+    padding:10px 12px;font-family:'Inter',sans-serif;font-size:0.88rem;color:var(--ink);
+    cursor:pointer;border-radius:2px;
+  }
+  .avatar-menu button:hover{background:var(--paper-dim);}
+
+  /* ---- modals ---- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(11,11,13,0.55);z-index:300;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-card{
+    background:#fff;border-radius:2px;width:100%;max-width:420px;
+    padding:36px;position:relative;max-height:90vh;overflow-y:auto;
+  }
+  .modal-close{
+    position:absolute;top:16px;right:16px;background:none;border:none;
+    font-size:1.4rem;line-height:1;cursor:pointer;color:var(--ink-soft);
+  }
+  .modal-tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--line);}
+  .modal-tabs button{
+    background:none;border:none;padding:10px 4px;margin-right:20px;font-family:'Inter',sans-serif;
+    font-size:0.95rem;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .modal-tabs button.active{color:var(--ink);border-bottom-color:var(--brass);font-weight:600;}
+  .modal-card label{
+    font-family:'JetBrains Mono',monospace;font-size:0.7rem;text-transform:uppercase;
+    letter-spacing:0.06em;color:var(--ink-soft);display:block;margin-bottom:6px;margin-top:16px;
+  }
+  .modal-card label:first-of-type{margin-top:0;}
+  .modal-card input[type=text], .modal-card input[type=email], .modal-card input[type=password],
+  .modal-card input[type=tel], .modal-card input[type=date], .modal-card textarea{
+    width:100%;border:1px solid var(--line);border-radius:2px;padding:11px 13px;
+    font-family:'Inter',sans-serif;font-size:0.92rem;color:var(--ink);background:#fff;
+  }
+  .modal-card textarea{resize:vertical;min-height:70px;}
+  .modal-card input:focus, .modal-card textarea:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  .modal-card .field-hint{font-size:0.74rem;color:var(--ink-soft);margin-top:4px;}
+  .modal-submit{
+    margin-top:22px;width:100%;background:var(--navy);color:#fff;border:1px solid var(--navy);
+    padding:12px 20px;border-radius:2px;font-size:0.92rem;font-weight:500;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .modal-submit:hover{background:transparent;color:var(--navy);}
+  .modal-submit:disabled{opacity:0.5;cursor:default;}
+  .modal-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--ink-soft);font-size:0.78rem;}
+  .modal-divider::before, .modal-divider::after{content:'';flex:1;height:1px;background:var(--line);}
+  .google-btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#fff;border:1px solid var(--line);border-radius:2px;padding:11px 16px;
+    font-family:'Inter',sans-serif;font-size:0.9rem;color:var(--ink);cursor:pointer;
+  }
+  .google-btn:hover{background:var(--paper-dim);}
+  .modal-status{margin-top:14px;font-size:0.84rem;text-align:center;color:var(--ink-soft);}
+  .modal-status.error{color:#B3261E;}
+  .modal-status.success{color:#2E7D32;}
+  .modal-link{font-size:0.82rem;color:var(--teal);text-decoration:none;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;}
+
+  /* ---- AI coach section (visible only when signed in) ---- */
+  #ai-coach-section{background:var(--navy);color:#fff;}
+  #ai-coach-section .sec-head p, #ai-coach-section .sec-head h2{color:#fff;}
+  .coach-panel{
+    border:1px solid var(--line-dark);padding:32px;border-radius:2px;
+    display:flex;flex-direction:column;gap:16px;align-items:flex-start;
+  }
+  .usage-timer-inline{
+    background:var(--navy-2);border:1px solid var(--line-dark);border-radius:2px;
+    padding:16px 20px;min-width:220px;
+  }
+  .usage-timer-inline .ut-label{font-family:'JetBrains Mono',monospace;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);margin-bottom:4px;}
+  .usage-timer-inline .ut-time{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.4rem;line-height:1;}
+  .usage-timer-inline .ut-sub{font-size:0.74rem;color:rgba(255,255,255,0.6);margin-top:6px;}
+  .usage-timer-inline .ut-bar{height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin-top:10px;overflow:hidden;}
+  .usage-timer-inline .ut-fill{height:100%;background:var(--teal);width:100%;transition:width 1s linear;}
+  .usage-timer-inline.ut-empty .ut-fill{background:#E4572E;}
+  .usage-timer-inline.ut-empty .ut-time{color:#E4572E;}
+  .usage-timer-inline.clickable{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -357,11 +446,28 @@
         <rect y="8" width="24" height="6" fill="#fff"/>
       </svg></button>
       </div>
-      <a href="signin.html?flow=signin" class="cta-btn ghost i18n" data-en="Sign in" data-el="Σύνδεση">Sign in</a>
-      <a href="signin.html?flow=signup" class="cta-btn i18n" data-en="Sign up" data-el="Εγγραφή">Sign up</a>
+      <div id="auth-buttons">
+        <a href="#" id="nav-signin-btn" class="cta-btn ghost i18n" data-en="Sign in" data-el="Σύνδεση">Sign in</a>
+        <a href="#" id="nav-signup-btn" class="cta-btn i18n" data-en="Sign up" data-el="Εγγραφή">Sign up</a>
+      </div>
+      <div id="avatar-wrap" style="display:none;position:relative;">
+        <button id="avatar-btn" aria-haspopup="true" aria-expanded="false" style="border:none;background:none;padding:0;cursor:pointer;display:block;">
+          <img id="avatar-img" src="" alt="Account" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid var(--line);display:block;">
+        </button>
+        <div id="avatar-menu" class="avatar-menu" style="display:none;">
+          <button type="button" id="menu-update-profile" class="i18n" data-en="Update profile" data-el="Ενημέρωση προφίλ">Update profile</button>
+          <button type="button" id="menu-signout" class="i18n" data-en="Sign out" data-el="Αποσύνδεση">Sign out</button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
+
+<!-- Email verification reminder -->
+<div id="verify-banner" style="display:none;background:var(--brass);color:var(--navy);padding:10px 32px;text-align:center;font-size:0.85rem;">
+  <span id="verify-banner-text" class="i18n" data-en="Please check your inbox and verify your email address." data-el="Ελέγξτε τα εισερχόμενά σας και επιβεβαιώστε τη διεύθυνση email σας.">Please check your inbox and verify your email address.</span>
+  <button type="button" id="verify-banner-dismiss" style="margin-left:12px;background:none;border:none;text-decoration:underline;cursor:pointer;color:inherit;font-size:inherit;" class="i18n" data-en="Dismiss" data-el="Παράβλεψη">Dismiss</button>
+</div>
 
 <!-- HERO -->
 <section class="hero" id="top">
@@ -380,8 +486,28 @@
         Certified life coaching methods, built into an AI that's there at 11pm on a Tuesday, backed by 30 years of real leadership and mentoring experience.
       </p>
       <div class="hero-ctas">
-        <a href="signin.html?flow=signup" class="cta-btn on-dark i18n" data-en="Sign up for the free 5-minute demo" data-el="Εγγραφείτε για το δωρεάν demo 5 λεπτών">Sign up for the free 5-minute demo</a>
+        <a href="#" id="hero-signup-btn" class="cta-btn on-dark i18n" data-en="Sign up for the free 5-minute demo" data-el="Εγγραφείτε για το δωρεάν demo 5 λεπτών">Sign up for the free 5-minute demo</a>
         <a href="#programs" class="cta-btn ghost-dark i18n" data-en="See the programs" data-el="Δείτε τα προγράμματα">See the programs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI COACH (signed-in users only) -->
+<section id="ai-coach-section" style="display:none;">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow i18n" data-en="Your AI Coach" data-el="Ο AI Coach σας">Your AI Coach</span>
+      <h2 id="coach-welcome-heading" class="i18n" data-en="Welcome back" data-el="Καλώς ήρθατε ξανά">Welcome back</h2>
+      <p class="i18n" data-en="Open the conversation bubble in the corner of this page whenever you're ready to talk."
+        data-el="Ανοίξτε τη φούσκα συνομιλίας στη γωνία της σελίδας όποτε είστε έτοιμοι να μιλήσετε.">Open the conversation bubble in the corner of this page whenever you're ready to talk.</p>
+    </div>
+    <div class="coach-panel">
+      <div class="usage-timer-inline" id="usage-timer">
+        <div class="ut-label" id="ut-label">Free demo</div>
+        <div class="ut-time" id="ut-time">5:00</div>
+        <div class="ut-sub" id="ut-sub"></div>
+        <div class="ut-bar"><div class="ut-fill" id="ut-fill"></div></div>
       </div>
     </div>
   </div>
@@ -644,7 +770,7 @@
           <li class="i18n" data-en="Voice or text — talk however feels natural"
             data-el="Φωνή ή κείμενο — μιλήστε με όποιον τρόπο σας βολεύει">Voice or text — talk however feels natural</li>
         </ul>
-        <a href="signin.html?flow=signup" class="cta-btn ghost-dark i18n" data-en="Start Option A" data-el="Ξεκινήστε την Επιλογή Α">Start Option A</a>
+        <a href="#" class="cta-btn ghost-dark i18n plan-cta" data-option="A" data-en="Start Option A" data-el="Ξεκινήστε την Επιλογή Α">Start Option A</a>
       </div>
 
       <div class="plan">
@@ -664,7 +790,7 @@
           <li class="i18n" data-en="Exportable summary — keep it, print it, or share it with your coach"
             data-el="Εξαγώγιμη περίληψη — κρατήστε τη, εκτυπώστε τη ή μοιραστείτε τη με τον coach σας">Exportable summary — keep it, print it, or share it with your coach</li>
         </ul>
-        <a href="signin.html?flow=signup" class="cta-btn ghost-dark i18n" data-en="Start Option B" data-el="Ξεκινήστε την Επιλογή Β">Start Option B</a>
+        <a href="#" class="cta-btn ghost-dark i18n plan-cta" data-option="B" data-en="Start Option B" data-el="Ξεκινήστε την Επιλογή Β">Start Option B</a>
       </div>
 
       <div class="plan">
@@ -684,7 +810,7 @@
           <li class="i18n" data-en="Priority scheduling for your live sessions"
             data-el="Προτεραιότητα στον προγραμματισμό των δια ζώσης συνεδριών σας">Priority scheduling for your live sessions</li>
         </ul>
-        <a href="signin.html?flow=signup" class="cta-btn ghost-dark i18n" data-en="Start Option C" data-el="Ξεκινήστε την Επιλογή Γ">Start Option C</a>
+        <a href="#" class="cta-btn ghost-dark i18n plan-cta" data-option="C" data-en="Start Option C" data-el="Ξεκινήστε την Επιλογή Γ">Start Option C</a>
       </div>
 
       <div class="plan featured">
@@ -705,7 +831,7 @@
           <li class="i18n" data-en="Cancel anytime — no long-term contract, no penalty"
             data-el="Ακυρώστε όποτε θέλετε — χωρίς μακροχρόνιο συμβόλαιο, χωρίς ποινή">Cancel anytime — no long-term contract, no penalty</li>
         </ul>
-        <a href="signin.html?flow=signup" class="cta-btn i18n" data-en="Start Option D" data-el="Ξεκινήστε την Επιλογή Δ" style="background:var(--navy);color:#fff;border-color:var(--navy);">Start Option D</a>
+        <a href="#" class="cta-btn i18n plan-cta" data-option="D" data-en="Start Option D" data-el="Ξεκινήστε την Επιλογή Δ" style="background:var(--navy);color:#fff;border-color:var(--navy);">Start Option D</a>
       </div>
 
     </div>
@@ -772,6 +898,82 @@
   </div>
 </footer>
 
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal" style="display:none;">
+  <div class="modal-card">
+    <button type="button" class="modal-close" id="auth-modal-close" aria-label="Close">&times;</button>
+    <div class="modal-tabs">
+      <button type="button" id="tab-signin" class="i18n" data-en="Sign in" data-el="Σύνδεση">Sign in</button>
+      <button type="button" id="tab-signup" class="i18n" data-en="Sign up" data-el="Εγγραφή">Sign up</button>
+    </div>
+
+    <!-- Sign in form -->
+    <form id="signin-form">
+      <label for="si-email" class="i18n" data-en="Email" data-el="Email">Email</label>
+      <input type="email" id="si-email" required autocomplete="email">
+      <label for="si-password" class="i18n" data-en="Password" data-el="Κωδικός">Password</label>
+      <input type="password" id="si-password" required autocomplete="current-password">
+      <div style="margin-top:8px;text-align:right;">
+        <button type="button" class="modal-link" id="forgot-password-link" class="i18n" data-en="Forgot password?" data-el="Ξεχάσατε τον κωδικό;">Forgot password?</button>
+      </div>
+      <button type="submit" class="modal-submit" id="signin-submit" data-en="Sign in" data-el="Σύνδεση">Sign in</button>
+      <div class="modal-divider" id="signin-divider"><span class="i18n" data-en="or" data-el="ή">or</span></div>
+      <button type="button" class="google-btn" id="signin-google">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.9 0 6.6 1.7 8.1 3.1l6-5.9C34.5 3.4 29.8 1.5 24 1.5 14.8 1.5 6.9 6.9 3.2 14.7l7 5.4C12 14.1 17.5 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.3 2.1-1.7 5.2-4.9 7.3l7.6 5.9c4.5-4.2 7.1-10.3 7.1-17.2z"/><path fill="#FBBC05" d="M10.2 20.1c-.5 1.5-.8 3.1-.8 4.9s.3 3.4.8 4.9l-7-5.4c0 0 0 0 0 0-.1-.3-.1-.7-.1-1s0-.7.1-1z"/><path fill="#34A853" d="M24 46.5c5.8 0 10.5-1.9 14.4-5.2l-7.6-5.9c-2 1.4-4.7 2.4-6.8 2.4-6.5 0-12-4.6-13.8-10.6l-7 5.4C6.9 41.1 14.8 46.5 24 46.5z"/></svg>
+        <span class="i18n" data-en="Continue with Google" data-el="Συνέχεια με Google">Continue with Google</span>
+      </button>
+      <div class="modal-status" id="signin-status"></div>
+    </form>
+
+    <!-- Sign up form -->
+    <form id="signup-form" style="display:none;">
+      <label for="su-name" class="i18n" data-en="Full name" data-el="Ονοματεπώνυμο">Full name</label>
+      <input type="text" id="su-name" required autocomplete="name">
+      <label for="su-email" class="i18n" data-en="Email" data-el="Email">Email</label>
+      <input type="email" id="su-email" required autocomplete="email">
+      <label for="su-password" class="i18n" data-en="Password" data-el="Κωδικός">Password</label>
+      <input type="password" id="su-password" required autocomplete="new-password" minlength="6">
+      <div class="field-hint i18n" data-en="At least 6 characters." data-el="Τουλάχιστον 6 χαρακτήρες.">At least 6 characters.</div>
+      <button type="submit" class="modal-submit" id="signup-submit" data-en="Create account" data-el="Δημιουργία λογαριασμού">Create account</button>
+      <div class="modal-divider"><span class="i18n" data-en="or" data-el="ή">or</span></div>
+      <button type="button" class="google-btn" id="signup-google">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.9 0 6.6 1.7 8.1 3.1l6-5.9C34.5 3.4 29.8 1.5 24 1.5 14.8 1.5 6.9 6.9 3.2 14.7l7 5.4C12 14.1 17.5 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.3 2.1-1.7 5.2-4.9 7.3l7.6 5.9c4.5-4.2 7.1-10.3 7.1-17.2z"/><path fill="#FBBC05" d="M10.2 20.1c-.5 1.5-.8 3.1-.8 4.9s.3 3.4.8 4.9l-7-5.4c0 0 0 0 0 0-.1-.3-.1-.7-.1-1s0-.7.1-1z"/><path fill="#34A853" d="M24 46.5c5.8 0 10.5-1.9 14.4-5.2l-7.6-5.9c-2 1.4-4.7 2.4-6.8 2.4-6.5 0-12-4.6-13.8-10.6l-7 5.4C6.9 41.1 14.8 46.5 24 46.5z"/></svg>
+        <span class="i18n" data-en="Continue with Google" data-el="Συνέχεια με Google">Continue with Google</span>
+      </button>
+      <div class="modal-status" id="signup-status"></div>
+    </form>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profile-modal" style="display:none;">
+  <div class="modal-card">
+    <button type="button" class="modal-close" id="profile-modal-close" aria-label="Close">&times;</button>
+    <h3 class="i18n" data-en="Update profile" data-el="Ενημέρωση προφίλ" style="margin-bottom:4px;">Update profile</h3>
+    <p style="color:var(--ink-soft);font-size:0.85rem;margin:0 0 8px;" class="i18n" data-en="Everything below is optional — it just helps personalize your sessions." data-el="Όλα τα παρακάτω είναι προαιρετικά — απλώς βοηθούν στην εξατομίκευση των συνεδριών σας.">Everything below is optional — it just helps personalize your sessions.</p>
+    <form id="profile-form-modal">
+      <label for="pf-name" class="i18n" data-en="Full name" data-el="Ονοματεπώνυμο">Full name</label>
+      <input type="text" id="pf-name" required autocomplete="name">
+      <label for="pf-interests" class="i18n" data-en="Areas of interest" data-el="Τομείς ενδιαφέροντος">Areas of interest</label>
+      <textarea id="pf-interests"></textarea>
+      <label for="pf-phone" class="i18n" data-en="Phone number (optional)" data-el="Τηλέφωνο (προαιρετικό)">Phone number (optional)</label>
+      <input type="tel" id="pf-phone" autocomplete="tel">
+      <label for="pf-dob" class="i18n" data-en="Date of birth (optional)" data-el="Ημερομηνία γέννησης (προαιρετικό)">Date of birth (optional)</label>
+      <input type="date" id="pf-dob">
+      <label for="pf-occupation" class="i18n" data-en="Occupation / job title (optional)" data-el="Επάγγελμα (προαιρετικό)">Occupation / job title (optional)</label>
+      <input type="text" id="pf-occupation">
+      <label for="pf-goals" class="i18n" data-en="Specific goals (optional)" data-el="Συγκεκριμένοι στόχοι (προαιρετικό)">Specific goals (optional)</label>
+      <textarea id="pf-goals"></textarea>
+      <button type="submit" class="modal-submit" id="profile-submit" data-en="Save" data-el="Αποθήκευση">Save</button>
+      <div class="modal-status" id="profile-status"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ElevenLabs Conversational AI floating widget (shown only when signed in) -->
+<elevenlabs-convai id="ai-coach-widget" agent-id="agent_1001ky9scz2qemaayvswg2cs07ns" style="display:none;"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
 <script>
   var testimonials = [
     {en:{q:"I kept pushing my Monday habit to Tuesday, every single week. Three weeks in with the AI check-ins, that stopped being a thing.",n:"Elena V.",r:"Marketing Director"},
@@ -816,6 +1018,7 @@
   }
 
   function setLang(lang){
+    currentLang = lang;
     document.documentElement.lang = lang;
     document.getElementById('btn-en').classList.toggle('active', lang==='en');
     document.getElementById('btn-el').classList.toggle('active', lang==='el');
@@ -824,6 +1027,7 @@
       if(val !== null){ el.innerHTML = val; }
     });
     renderTestimonials(lang);
+    if (usageState) renderUsageTimer();
     try{ localStorage.setItem('waypoint-lang', lang); }catch(e){}
   }
 
@@ -870,6 +1074,414 @@
         btn.disabled = false;
       });
     });
+  })();
+
+  // =========================================================================
+  // Auth, profile, and AI-coach-usage system (single-page: no more separate
+  // signin.html / profile.html / dashboard.html)
+  // =========================================================================
+  var currentLang = 'en';
+  var pendingPlanOption = null;
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyA_uG-M8Wz2dqhty8zXtyTUrJyp_hnwhZw",
+    authDomain: "lifecoach-authentication.firebaseapp.com",
+    projectId: "lifecoach-authentication",
+    storageBucket: "lifecoach-authentication.firebasestorage.app",
+    messagingSenderId: "937227852104",
+    appId: "1:937227852104:web:36edb6dc0add0ef799fb7d",
+    measurementId: "G-DSKHMB7D5S"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+
+  // ---- auth modal ----
+  function openAuthModal(mode){
+    document.getElementById('auth-modal').style.display = 'flex';
+    switchAuthTab(mode || 'signin');
+  }
+  function closeAuthModal(){
+    document.getElementById('auth-modal').style.display = 'none';
+    document.getElementById('signin-status').textContent = '';
+    document.getElementById('signin-status').className = 'modal-status';
+    document.getElementById('signup-status').textContent = '';
+    document.getElementById('signup-status').className = 'modal-status';
+  }
+  function switchAuthTab(mode){
+    var isSignin = mode === 'signin';
+    document.getElementById('tab-signin').classList.toggle('active', isSignin);
+    document.getElementById('tab-signup').classList.toggle('active', !isSignin);
+    document.getElementById('signin-form').style.display = isSignin ? 'block' : 'none';
+    document.getElementById('signup-form').style.display = isSignin ? 'none' : 'block';
+  }
+
+  document.getElementById('nav-signin-btn').addEventListener('click', function(e){ e.preventDefault(); openAuthModal('signin'); });
+  document.getElementById('nav-signup-btn').addEventListener('click', function(e){ e.preventDefault(); openAuthModal('signup'); });
+  document.getElementById('hero-signup-btn').addEventListener('click', function(e){ e.preventDefault(); openAuthModal('signup'); });
+  document.getElementById('tab-signin').addEventListener('click', function(){ switchAuthTab('signin'); });
+  document.getElementById('tab-signup').addEventListener('click', function(){ switchAuthTab('signup'); });
+  document.getElementById('auth-modal-close').addEventListener('click', closeAuthModal);
+  document.getElementById('auth-modal').addEventListener('click', function(e){ if (e.target === this) closeAuthModal(); });
+
+  document.querySelectorAll('.plan-cta').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var option = btn.getAttribute('data-option');
+      if (auth.currentUser){
+        window.location.href = 'order.html?option=' + option;
+      } else {
+        pendingPlanOption = option;
+        openAuthModal('signup');
+      }
+    });
+  });
+
+  // ---- sign in ----
+  document.getElementById('signin-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('si-email').value.trim();
+    var password = document.getElementById('si-password').value;
+    var statusEl = document.getElementById('signin-status');
+    var btn = document.getElementById('signin-submit');
+    btn.disabled = true; statusEl.className = 'modal-status'; statusEl.textContent = '';
+    auth.signInWithEmailAndPassword(email, password).then(function(){
+      closeAuthModal();
+    }).catch(function(err){
+      statusEl.className = 'modal-status error';
+      statusEl.textContent = err.message;
+    }).finally(function(){ btn.disabled = false; });
+  });
+
+  document.getElementById('forgot-password-link').addEventListener('click', function(){
+    var email = document.getElementById('si-email').value.trim();
+    var statusEl = document.getElementById('signin-status');
+    if (!email){
+      statusEl.className = 'modal-status error';
+      statusEl.textContent = currentLang === 'el' ? 'Πληκτρολογήστε το email σας πρώτα.' : 'Enter your email above first.';
+      return;
+    }
+    auth.sendPasswordResetEmail(email, { url: window.location.origin + window.location.pathname }).then(function(){
+      statusEl.className = 'modal-status success';
+      statusEl.textContent = currentLang === 'el' ? 'Στείλαμε σύνδεσμο επαναφοράς κωδικού στο email σας.' : 'Password reset link sent to your email.';
+    }).catch(function(err){
+      statusEl.className = 'modal-status error';
+      statusEl.textContent = err.message;
+    });
+  });
+
+  // ---- sign up ----
+  document.getElementById('signup-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('su-name').value.trim();
+    var email = document.getElementById('su-email').value.trim();
+    var password = document.getElementById('su-password').value;
+    var statusEl = document.getElementById('signup-status');
+    var btn = document.getElementById('signup-submit');
+    btn.disabled = true; statusEl.className = 'modal-status'; statusEl.textContent = '';
+    auth.createUserWithEmailAndPassword(email, password).then(function(cred){
+      return db.collection('users').doc(cred.user.uid).set({
+        fullName: name,
+        email: email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).then(function(){
+        return cred.user.sendEmailVerification({ url: window.location.origin + window.location.pathname });
+      });
+    }).then(function(){
+      closeAuthModal();
+    }).catch(function(err){
+      statusEl.className = 'modal-status error';
+      statusEl.textContent = err.message;
+    }).finally(function(){ btn.disabled = false; });
+  });
+
+  // ---- Google (both tabs use the same flow) ----
+  function handleGoogleAuth(){
+    var provider = new firebase.auth.GoogleAuthProvider();
+    return auth.signInWithPopup(provider).then(function(result){
+      var user = result.user;
+      return db.collection('users').doc(user.uid).get().then(function(doc){
+        if (!doc.exists){
+          return db.collection('users').doc(user.uid).set({
+            fullName: user.displayName || '',
+            email: user.email || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+      });
+    }).then(function(){
+      closeAuthModal();
+    });
+  }
+  document.getElementById('signin-google').addEventListener('click', function(){
+    handleGoogleAuth().catch(function(err){
+      var statusEl = document.getElementById('signin-status');
+      statusEl.className = 'modal-status error'; statusEl.textContent = err.message;
+    });
+  });
+  document.getElementById('signup-google').addEventListener('click', function(){
+    handleGoogleAuth().catch(function(err){
+      var statusEl = document.getElementById('signup-status');
+      statusEl.className = 'modal-status error'; statusEl.textContent = err.message;
+    });
+  });
+
+  // ---- avatar dropdown ----
+  function toggleAvatarMenu(show){
+    var menu = document.getElementById('avatar-menu');
+    var willShow = (typeof show === 'boolean') ? show : (menu.style.display === 'none');
+    menu.style.display = willShow ? 'block' : 'none';
+    document.getElementById('avatar-btn').setAttribute('aria-expanded', willShow ? 'true' : 'false');
+  }
+  function closeAvatarMenu(){ toggleAvatarMenu(false); }
+  document.getElementById('avatar-btn').addEventListener('click', function(e){
+    e.stopPropagation();
+    toggleAvatarMenu();
+  });
+  document.getElementById('avatar-btn').addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    toggleAvatarMenu(true);
+  });
+  document.addEventListener('click', function(){ closeAvatarMenu(); });
+  document.getElementById('menu-signout').addEventListener('click', function(){
+    closeAvatarMenu();
+    auth.signOut();
+  });
+
+  // ---- profile modal ----
+  function openProfileModal(){
+    var user = auth.currentUser;
+    if (!user) return;
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var data = doc.data() || {};
+      document.getElementById('pf-name').value = data.fullName || '';
+      document.getElementById('pf-interests').value = data.interests || '';
+      document.getElementById('pf-phone').value = data.phone || '';
+      document.getElementById('pf-dob').value = data.dob || '';
+      document.getElementById('pf-occupation').value = data.occupation || '';
+      document.getElementById('pf-goals').value = data.goals || '';
+      document.getElementById('profile-modal').style.display = 'flex';
+    });
+    closeAvatarMenu();
+  }
+  function closeProfileModal(){
+    document.getElementById('profile-modal').style.display = 'none';
+    document.getElementById('profile-status').textContent = '';
+    document.getElementById('profile-status').className = 'modal-status';
+  }
+  document.getElementById('menu-update-profile').addEventListener('click', openProfileModal);
+  document.getElementById('profile-modal-close').addEventListener('click', closeProfileModal);
+  document.getElementById('profile-modal').addEventListener('click', function(e){ if (e.target === this) closeProfileModal(); });
+
+  document.getElementById('profile-form-modal').addEventListener('submit', function(e){
+    e.preventDefault();
+    var user = auth.currentUser;
+    if (!user) return;
+    var statusEl = document.getElementById('profile-status');
+    var btn = document.getElementById('profile-submit');
+    btn.disabled = true;
+    var update = {
+      fullName: document.getElementById('pf-name').value.trim(),
+      interests: document.getElementById('pf-interests').value.trim(),
+      phone: document.getElementById('pf-phone').value.trim(),
+      dob: document.getElementById('pf-dob').value,
+      occupation: document.getElementById('pf-occupation').value.trim(),
+      goals: document.getElementById('pf-goals').value.trim()
+    };
+    db.collection('users').doc(user.uid).set(update, { merge: true }).then(function(){
+      statusEl.className = 'modal-status success';
+      statusEl.textContent = currentLang === 'el' ? 'Αποθηκεύτηκε.' : 'Saved.';
+      setTimeout(closeProfileModal, 700);
+    }).catch(function(err){
+      statusEl.className = 'modal-status error';
+      statusEl.textContent = err.message;
+    }).finally(function(){ btn.disabled = false; });
+  });
+
+  // ---- email verification banner ----
+  document.getElementById('verify-banner-dismiss').addEventListener('click', function(){
+    document.getElementById('verify-banner').style.display = 'none';
+  });
+
+  // ---- AI coach usage timer ----
+  // Makis manually sets planTotalMinutes on a user's Firestore doc after
+  // confirming a payment (see order emails). Unset defaults to a 5-minute
+  // free demo. A very large number (100000+) displays as unlimited.
+  var UNLIMITED_THRESHOLD_SECONDS = 100000 * 60;
+  var usageState = null;          // {uid, totalSeconds, usedSeconds}
+  var usageUnsubscribe = null;
+  var usageSessionActive = false;
+  var usageSessionStartTs = null;
+  var usageSessionBaseUsed = 0;
+  var usageTickInterval = null;
+  var usageWidgetWired = false;
+
+  function attachUsageListener(uid){
+    if (usageUnsubscribe){ usageUnsubscribe(); usageUnsubscribe = null; }
+    usageUnsubscribe = db.collection('users').doc(uid).onSnapshot(function(doc){
+      var data = doc.data() || {};
+      var totalMinutes = (typeof data.planTotalMinutes === 'number') ? data.planTotalMinutes : 5;
+      usageState = { uid: uid, totalSeconds: totalMinutes * 60, usedSeconds: data.planUsedSeconds || 0 };
+      renderUsageTimer();
+    }, function(){ /* best-effort */ });
+  }
+
+  function formatTime(totalSecondsRemaining){
+    var m = Math.floor(totalSecondsRemaining / 60);
+    var s = totalSecondsRemaining % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function renderUsageTimer(){
+    var box = document.getElementById('usage-timer');
+    var widget = document.getElementById('ai-coach-widget');
+    if (!box || !usageState) return;
+    var barWrap = box.querySelector('.ut-bar');
+    document.getElementById('ut-label').textContent = currentLang === 'el' ? 'Διαθέσιμος χρόνος' : 'Time available';
+
+    if (usageState.totalSeconds >= UNLIMITED_THRESHOLD_SECONDS){
+      document.getElementById('ut-time').textContent = '∞';
+      barWrap.style.display = 'none';
+      box.classList.remove('ut-empty', 'clickable');
+      document.getElementById('ut-sub').textContent = '';
+      if (widget){ widget.style.pointerEvents = ''; widget.style.opacity = ''; }
+      return;
+    }
+
+    barWrap.style.display = '';
+    var remaining = Math.max(0, usageState.totalSeconds - usageState.usedSeconds);
+    document.getElementById('ut-time').textContent = formatTime(remaining);
+    var pct = usageState.totalSeconds > 0 ? Math.max(0, (remaining / usageState.totalSeconds) * 100) : 0;
+    document.getElementById('ut-fill').style.width = pct + '%';
+    var empty = remaining <= 0;
+    box.classList.toggle('ut-empty', empty);
+    box.classList.toggle('clickable', empty);
+    document.getElementById('ut-sub').textContent = empty
+      ? (currentLang === 'el' ? 'Τελείωσαν τα λεπτά σας — επικοινωνήστε για αναβάθμιση.' : "You're out of minutes — contact us to upgrade.")
+      : (currentLang === 'el' ? 'Μετρά όσο μιλάτε' : 'Counts down while you talk');
+    if (widget){
+      widget.style.pointerEvents = empty ? 'none' : '';
+      widget.style.opacity = empty ? '0.4' : '';
+    }
+  }
+
+  function usageTick(){
+    if (!usageSessionActive) return;
+    var elapsed = Math.floor((Date.now() - usageSessionStartTs) / 1000);
+    usageState.usedSeconds = usageSessionBaseUsed + elapsed;
+    renderUsageTimer();
+    if (usageState.totalSeconds - usageState.usedSeconds <= 0){
+      endUsageSession();
+    }
+  }
+
+  function startUsageSession(){
+    if (!usageState || usageState.totalSeconds >= UNLIMITED_THRESHOLD_SECONDS) return;
+    if (usageSessionActive) return;
+    if (usageState.totalSeconds - usageState.usedSeconds <= 0){ renderUsageTimer(); return; }
+    usageSessionActive = true;
+    usageSessionStartTs = Date.now();
+    usageSessionBaseUsed = usageState.usedSeconds;
+    usageTickInterval = setInterval(usageTick, 1000);
+  }
+
+  function endUsageSession(){
+    if (usageTickInterval){ clearInterval(usageTickInterval); usageTickInterval = null; }
+    if (!usageSessionActive) return;
+    usageSessionActive = false;
+    db.collection('users').doc(usageState.uid).set(
+      { planUsedSeconds: Math.min(usageState.usedSeconds, usageState.totalSeconds) },
+      { merge: true }
+    ).catch(function(){});
+  }
+
+  function wireUsageWidget(){
+    if (usageWidgetWired) return;
+    usageWidgetWired = true;
+    var widget = document.getElementById('ai-coach-widget');
+    if (!widget) return;
+
+    // A click inside the widget (Shadow DOM included) starts the clock. A click
+    // anywhere else on the page stops it — the closest reliable automatic proxy
+    // available, since the widget itself exposes no "call started/ended" events.
+    document.addEventListener('click', function(e){
+      if (!usageState || usageState.totalSeconds >= UNLIMITED_THRESHOLD_SECONDS) return;
+      var path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      var insideWidget = path.indexOf(widget) !== -1;
+      if (insideWidget){
+        startUsageSession();
+      } else if (usageSessionActive){
+        endUsageSession();
+      }
+    });
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) endUsageSession();
+    });
+    window.addEventListener('beforeunload', function(){ if (usageSessionActive) endUsageSession(); });
+    window.addEventListener('pagehide', function(){ if (usageSessionActive) endUsageSession(); });
+
+    document.getElementById('usage-timer').addEventListener('click', function(){
+      if (usageState && usageState.totalSeconds < UNLIMITED_THRESHOLD_SECONDS && usageState.totalSeconds - usageState.usedSeconds <= 0){
+        var target = document.getElementById('programs');
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+  wireUsageWidget();
+
+  // ---- central auth-state orchestrator ----
+  auth.onAuthStateChanged(function(user){
+    var authButtons = document.getElementById('auth-buttons');
+    var avatarWrap = document.getElementById('avatar-wrap');
+    var coachSection = document.getElementById('ai-coach-section');
+    var widget = document.getElementById('ai-coach-widget');
+    var verifyBanner = document.getElementById('verify-banner');
+
+    if (!user){
+      authButtons.style.display = 'flex';
+      avatarWrap.style.display = 'none';
+      coachSection.style.display = 'none';
+      widget.style.display = 'none';
+      verifyBanner.style.display = 'none';
+      if (usageUnsubscribe){ usageUnsubscribe(); usageUnsubscribe = null; }
+      usageState = null;
+      return;
+    }
+
+    authButtons.style.display = 'none';
+    avatarWrap.style.display = 'block';
+    coachSection.style.display = 'block';
+    widget.style.display = '';
+    document.getElementById('avatar-img').src = 'https://api.dicebear.com/9.x/notionists/svg?seed=' + encodeURIComponent(user.uid) + '&backgroundColor=f1f1f2';
+    verifyBanner.style.display = user.emailVerified ? 'none' : 'block';
+
+    // Tags each conversation with this visitor's account id, so it's identifiable
+    // in your ElevenLabs conversation history even without automated tracking.
+    widget.setAttribute('dynamic-variables', JSON.stringify({ firebase_uid: user.uid }));
+
+    attachUsageListener(user.uid);
+
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var data = doc.data() || {};
+      var firstName = data.fullName ? data.fullName.split(' ')[0] : (user.displayName || '');
+      document.getElementById('coach-welcome-heading').textContent = (currentLang === 'el' ? 'Καλώς ήρθατε, ' : 'Welcome, ') + firstName;
+    });
+
+    if (pendingPlanOption){
+      var opt = pendingPlanOption;
+      pendingPlanOption = null;
+      window.location.href = 'order.html?option=' + opt;
+    }
+  });
+
+  // Auto-open the auth modal if arriving via a link like index.html?auth=signin
+  // (used by order.html when it needs someone to sign in first).
+  (function(){
+    var params = new URLSearchParams(window.location.search);
+    var authParam = params.get('auth');
+    if (authParam === 'signin' || authParam === 'signup'){
+      openAuthModal(authParam);
+    }
   })();
 </script>
 

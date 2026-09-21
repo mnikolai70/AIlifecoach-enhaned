@@ -108,7 +108,7 @@
           <button id="btn-el" onclick="setLang('el')" title="Ελληνικά" aria-label="Ελληνικά"><svg viewBox="0 0 60 40" width="22" height="16" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:2px;"><rect width="60" height="40" fill="#0D5EAF"/><g fill="#fff"><rect y="4.44" width="60" height="4.45"/><rect y="13.33" width="60" height="4.45"/><rect y="22.22" width="60" height="4.45"/><rect y="31.11" width="60" height="4.45"/></g><rect width="24" height="22.22" fill="#0D5EAF"/><rect x="9" width="6" height="22.22" fill="#fff"/><rect y="8" width="24" height="6" fill="#fff"/></svg></button>
         </div>
         <a href="index.html#contact" id="contact-link" class="cta-btn ghost">Contact</a>
-        <a href="dashboard.html" class="cta-btn ghost" id="back-link">Back to dashboard</a>
+        <a href="index.html" class="cta-btn ghost" id="back-link">Back to site</a>
       </div>
     </div>
   </header>
@@ -195,7 +195,7 @@
   <div class="wrap" id="confirmation">
     <h2 id="confirm-title">Thank you — your order has been received</h2>
     <p id="confirm-body">Makis will personally review your order and send you a confirmation email, along with details and next steps, shortly.</p>
-    <a href="dashboard.html" class="cta-btn" style="margin-top:24px;display:inline-flex;" id="confirm-back-link">Back to dashboard</a>
+    <a href="index.html" class="cta-btn" style="margin-top:24px;display:inline-flex;" id="confirm-back-link">Back to site</a>
   </div>
 </div>
 
@@ -231,7 +231,7 @@
   var copy = {
     en: {
       docTitle: 'Complete your order — Makis Nikolaidis',
-      eyebrowOrder: 'Your order', backLink: 'Back to dashboard', contactLink: 'Contact',
+      eyebrowOrder: 'Your order', backLink: 'Back to site', contactLink: 'Contact',
       formTitle: 'Your details', paymentTitle: 'Payment method',
       labelName: 'Full name', labelAddress: 'Address', labelPhone: 'Phone number', labelEmail: 'Email', labelComment: 'Comment (optional)',
       tabBank: 'Bank transfer', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Card',
@@ -256,7 +256,7 @@
     },
     el: {
       docTitle: 'Ολοκλήρωση παραγγελίας — Makis Nikolaidis',
-      eyebrowOrder: 'Η παραγγελία σας', backLink: 'Πίσω στον πίνακά μου', contactLink: 'Επικοινωνία',
+      eyebrowOrder: 'Η παραγγελία σας', backLink: 'Πίσω στην ιστοσελίδα', contactLink: 'Επικοινωνία',
       formTitle: 'Τα στοιχεία σας', paymentTitle: 'Τρόπος πληρωμής',
       labelName: 'Ονοματεπώνυμο', labelAddress: 'Διεύθυνση', labelPhone: 'Τηλέφωνο', labelEmail: 'Email', labelComment: 'Σχόλιο (προαιρετικό)',
       tabBank: 'Τραπεζικό έμβασμα', tabIris: 'IRIS', tabPaypal: 'PayPal', tabCard: 'Κάρτα',
@@ -377,6 +377,25 @@
     box.style.display = 'block';
   }
 
+  function notifyOrderByEmail(order){
+    var body = new FormData();
+    body.append('_subject', 'New order — Option ' + order.option + ' (' + order.paymentMethod + ')');
+    body.append('name', order.fullName);
+    body.append('email', order.email);
+    body.append('phone', order.phone);
+    body.append('address', order.address);
+    body.append('option', order.option);
+    body.append('price', order.price);
+    body.append('paymentMethod', order.paymentMethod);
+    body.append('status', order.status);
+    body.append('comment', order.comment || '');
+    return fetch('https://formspree.io/f/xwlpokdq', {
+      method: 'POST',
+      body: body,
+      headers: { 'Accept': 'application/json' }
+    }).catch(function(){ /* best-effort — never block the order flow on email failure */ });
+  }
+
   function saveOrder(extra){
     if (!formIsValid()){
       showError(currentLang === 'el' ? 'Συμπληρώστε όνομα, διεύθυνση, τηλέφωνο και email πριν συνεχίσετε.' : 'Please fill in name, address, phone, and email before continuing.');
@@ -394,6 +413,7 @@
       comment: form.comment,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, extra);
+    notifyOrderByEmail(order);
     return db.collection('orders').add(order);
   }
 
@@ -450,7 +470,7 @@
   // ---- auth + prefill ----
   auth.onAuthStateChanged(function(user){
     if (!user){
-      window.location.href = 'signin.html';
+      window.location.href = 'index.html?auth=signin';
       return;
     }
     currentUser = user;
