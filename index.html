@@ -285,6 +285,35 @@
 
   /* focus visibility */
   a:focus-visible, button:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  /* ---- contact ---- */
+  .contact-wrap{display:flex;gap:64px;flex-wrap:wrap;}
+  .contact-copy{flex:1 1 320px;max-width:400px;}
+  .contact-copy p{color:var(--ink-soft);margin-top:16px;font-size:0.98rem;}
+  .contact-form{flex:1 1 420px;max-width:520px;border:1px solid var(--line);padding:36px;border-radius:2px;background:var(--paper-dim);}
+  .contact-form label{
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:0.06em;color:var(--ink-soft);display:block;margin-bottom:8px;margin-top:20px;
+  }
+  .contact-form label:first-child{margin-top:0;}
+  .contact-form input[type=text],
+  .contact-form input[type=email],
+  .contact-form textarea{
+    width:100%;border:1px solid var(--line);border-radius:2px;padding:12px 14px;
+    font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--ink);background:#fff;
+  }
+  .contact-form textarea{resize:vertical;min-height:130px;}
+  .contact-form input:focus, .contact-form textarea:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  .contact-form button{
+    margin-top:28px;background:var(--navy);color:#fff;border:1px solid var(--navy);
+    padding:13px 24px;border-radius:2px;font-size:0.95rem;font-weight:500;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .contact-form button:hover{background:transparent;color:var(--navy);}
+  .contact-form button:disabled{opacity:0.5;cursor:default;}
+  .contact-status{margin-top:14px;font-size:0.85rem;color:var(--ink-soft);}
+  .contact-status.error{color:#B3261E;}
+  .contact-status.success{color:#2E7D32;}
 </style>
 </head>
 <body>
@@ -300,6 +329,7 @@
       <a href="#evolution" class="i18n" data-en="The AI coach" data-el="Ο AI coach">The AI coach</a>
       <a href="#about" class="i18n" data-en="About" data-el="Σχετικά">About</a>
       <a href="#programs" class="i18n" data-en="Programs" data-el="Προγράμματα">Programs</a>
+      <a href="#contact" class="i18n" data-en="Contact" data-el="Επικοινωνία">Contact</a>
     </nav>
     <div class="nav-right">
       <div class="lang-toggle" role="group" aria-label="Language">
@@ -681,6 +711,40 @@
   </div>
 </section>
 
+<!-- CONTACT -->
+<section id="contact">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow i18n" data-en="Get in touch" data-el="Επικοινωνήστε">Get in touch</span>
+      <h2 class="i18n" data-en="Have a question first?" data-el="Έχετε μια ερώτηση πρώτα;">Have a question first?</h2>
+    </div>
+    <div class="contact-wrap">
+      <div class="contact-copy">
+        <p class="i18n" data-en="Send a message and I'll get back to you personally — no bot in between."
+          data-el="Στείλτε ένα μήνυμα και θα σας απαντήσω προσωπικά — χωρίς bot ενδιάμεσα.">
+          Send a message and I'll get back to you personally — no bot in between.
+        </p>
+      </div>
+      <form class="contact-form" id="contact-form" action="https://formspree.io/f/xwlpokdq" method="POST">
+        <label for="cf-name" class="i18n" data-en="Your name" data-el="Το όνομά σας">Your name</label>
+        <input type="text" id="cf-name" name="name" required autocomplete="name">
+
+        <label for="cf-email" class="i18n" data-en="Your email" data-el="Το email σας">Your email</label>
+        <input type="email" id="cf-email" name="email" required autocomplete="email">
+
+        <label for="cf-subject" class="i18n" data-en="Subject" data-el="Θέμα">Subject</label>
+        <input type="text" id="cf-subject" name="subject" required>
+
+        <label for="cf-message" class="i18n" data-en="Description" data-el="Περιγραφή">Description</label>
+        <textarea id="cf-message" name="message" required></textarea>
+
+        <button type="submit" id="cf-submit" class="i18n" data-en="Send message" data-el="Αποστολή μηνύματος">Send message</button>
+        <div id="cf-status" class="contact-status"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="footer-top">
@@ -697,6 +761,7 @@
         <a href="#evolution" class="i18n" data-en="The AI coach" data-el="Ο AI coach">The AI coach</a>
         <a href="#about" class="i18n" data-en="About" data-el="Σχετικά">About</a>
         <a href="#programs" class="i18n" data-en="Programs" data-el="Προγράμματα">Programs</a>
+        <a href="#contact" class="i18n" data-en="Contact" data-el="Επικοινωνία">Contact</a>
       </nav>
     </div>
     <div class="footer-bottom">
@@ -765,6 +830,45 @@
     var saved = 'en';
     try{ saved = localStorage.getItem('waypoint-lang') || 'en'; }catch(e){}
     setLang(saved);
+  })();
+
+  var contactStatusText = {
+    en:{sending:'Sending…', success:'Thanks — your message is on its way. I\'ll reply by email soon.', error:'Something went wrong. Please try again, or email makis.nikolaidis@icloud.com directly.'},
+    el:{sending:'Αποστολή…', success:'Ευχαριστώ — το μήνυμά σας εστάλη. Θα απαντήσω σύντομα με email.', error:'Κάτι πήγε στραβά. Δοκιμάστε ξανά, ή στείλτε email απευθείας στο makis.nikolaidis@icloud.com.'}
+  };
+
+  (function(){
+    var form = document.getElementById('contact-form');
+    if(!form) return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var lang = document.documentElement.lang === 'el' ? 'el' : 'en';
+      var statusEl = document.getElementById('cf-status');
+      var btn = document.getElementById('cf-submit');
+      btn.disabled = true;
+      statusEl.className = 'contact-status';
+      statusEl.textContent = contactStatusText[lang].sending;
+
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      }).then(function(res){
+        if(res.ok){
+          statusEl.className = 'contact-status success';
+          statusEl.textContent = contactStatusText[lang].success;
+          form.reset();
+        } else {
+          statusEl.className = 'contact-status error';
+          statusEl.textContent = contactStatusText[lang].error;
+        }
+      }).catch(function(){
+        statusEl.className = 'contact-status error';
+        statusEl.textContent = contactStatusText[lang].error;
+      }).finally(function(){
+        btn.disabled = false;
+      });
+    });
   })();
 </script>
 
