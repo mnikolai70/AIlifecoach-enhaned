@@ -388,22 +388,22 @@
   /* ---- AI coach section (visible only when signed in) ---- */
   #ai-coach-section{background:var(--navy);color:#fff;}
   #ai-coach-section .sec-head p, #ai-coach-section .sec-head h2{color:#fff;}
-  .coach-panel{
-    border:1px solid var(--line-dark);padding:32px;border-radius:2px;
-    display:flex;flex-direction:column;gap:16px;align-items:flex-start;
-  }
+  /* Floating usage timer — stays fixed on screen near the widget launcher,
+     regardless of scroll position, exactly like the original dashboard. */
   .usage-timer-inline{
-    background:var(--navy-2);border:1px solid var(--line-dark);border-radius:2px;
-    padding:16px 20px;min-width:220px;
+    position:fixed;right:24px;bottom:104px;z-index:9998;
+    background:var(--navy);color:#fff;border-radius:2px;
+    padding:14px 18px;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,0.25);
   }
-  .usage-timer-inline .ut-label{font-family:'JetBrains Mono',monospace;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);margin-bottom:4px;}
-  .usage-timer-inline .ut-time{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.4rem;line-height:1;}
-  .usage-timer-inline .ut-sub{font-size:0.74rem;color:rgba(255,255,255,0.6);margin-top:6px;}
+  .usage-timer-inline .ut-label{font-family:'JetBrains Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);margin-bottom:4px;}
+  .usage-timer-inline .ut-time{font-family:'Archivo',sans-serif;font-weight:700;font-size:1.35rem;line-height:1;}
+  .usage-timer-inline .ut-sub{font-size:0.72rem;color:rgba(255,255,255,0.65);margin-top:6px;line-height:1.3;}
   .usage-timer-inline .ut-bar{height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin-top:10px;overflow:hidden;}
   .usage-timer-inline .ut-fill{height:100%;background:var(--teal);width:100%;transition:width 1s linear;}
   .usage-timer-inline.ut-empty .ut-fill{background:#E4572E;}
   .usage-timer-inline.ut-empty .ut-time{color:#E4572E;}
   .usage-timer-inline.clickable{cursor:pointer;}
+  @media(max-width:640px){.usage-timer-inline{right:12px;bottom:96px;min-width:150px;padding:11px 14px;}}
 </style>
 </head>
 <body>
@@ -502,13 +502,13 @@
       <p class="i18n" data-en="Open the conversation bubble in the corner of this page whenever you're ready to talk."
         data-el="Ανοίξτε τη φούσκα συνομιλίας στη γωνία της σελίδας όποτε είστε έτοιμοι να μιλήσετε.">Open the conversation bubble in the corner of this page whenever you're ready to talk.</p>
     </div>
-    <div class="coach-panel">
-      <div class="usage-timer-inline" id="usage-timer">
-        <div class="ut-label" id="ut-label">Free demo</div>
-        <div class="ut-time" id="ut-time">5:00</div>
-        <div class="ut-sub" id="ut-sub"></div>
-        <div class="ut-bar"><div class="ut-fill" id="ut-fill"></div></div>
-      </div>
+    <!-- The countdown itself floats fixed in the corner of the screen (see
+         .usage-timer-inline) so it's visible wherever you scroll, not just here. -->
+    <div class="usage-timer-inline" id="usage-timer">
+      <div class="ut-label" id="ut-label">Free demo</div>
+      <div class="ut-time" id="ut-time">5:00</div>
+      <div class="ut-sub" id="ut-sub"></div>
+      <div class="ut-bar"><div class="ut-fill" id="ut-fill"></div></div>
     </div>
   </div>
 </section>
@@ -1171,6 +1171,19 @@
   });
 
   // ---- sign up ----
+  function notifyNewRegistrationByEmail(name, email, method){
+    var body = new FormData();
+    body.append('_subject', 'New registration — ' + (name || email));
+    body.append('name', name || '(not provided)');
+    body.append('email', email || '');
+    body.append('method', method); // 'email/password' or 'google'
+    return fetch('https://formspree.io/f/xwlpokdq', {
+      method: 'POST',
+      body: body,
+      headers: { 'Accept': 'application/json' }
+    }).catch(function(){ /* best-effort — never block sign-up on email failure */ });
+  }
+
   document.getElementById('signup-form').addEventListener('submit', function(e){
     e.preventDefault();
     var name = document.getElementById('su-name').value.trim();
@@ -1180,6 +1193,7 @@
     var btn = document.getElementById('signup-submit');
     btn.disabled = true; statusEl.className = 'modal-status'; statusEl.textContent = '';
     auth.createUserWithEmailAndPassword(email, password).then(function(cred){
+      notifyNewRegistrationByEmail(name, email, 'email/password');
       return db.collection('users').doc(cred.user.uid).set({
         fullName: name,
         email: email,
@@ -1202,6 +1216,7 @@
       var user = result.user;
       return db.collection('users').doc(user.uid).get().then(function(doc){
         if (!doc.exists){
+          notifyNewRegistrationByEmail(user.displayName, user.email, 'google');
           return db.collection('users').doc(user.uid).set({
             fullName: user.displayName || '',
             email: user.email || '',
