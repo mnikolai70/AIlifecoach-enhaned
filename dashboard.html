@@ -673,9 +673,14 @@
   }
 
   // ---- usage / demo countdown timer ----
+  // Note: the ElevenLabs widget does not publicly expose "conversation started/ended"
+  // events, so this tracks time from when the visitor first interacts with the widget
+  // panel (any click inside it) until they switch tabs or navigate away. It is a close
+  // approximation of active use, not a precise measure of talk-time.
   var OPTION_MINUTES = { A: 30, B: 180, C: 360 }; // D = unlimited, handled separately
   var usageState = null;   // {mode:'demo'|'plan'|'unlimited', uid, optionCode, totalSeconds, usedSeconds, usedSecondsAtStart}
   var usageTickInterval = null;
+  var usageSessionActive = false;
   var usageSessionStartTs = null;
 
   function fetchActivePlan(uid){
@@ -727,6 +732,7 @@
 
   function renderUsageTimer(){
     var box = document.getElementById('usage-timer');
+    var widget = document.getElementById('ai-coach-widget');
     if (!usageState){ box.style.display = 'none'; return; }
     box.style.display = 'block';
     var barWrap = box.querySelector('.ut-bar');
@@ -734,6 +740,7 @@
       document.getElementById('ut-time').textContent = '∞';
       barWrap.style.display = 'none';
       box.classList.remove('ut-empty');
+      if (widget){ widget.style.pointerEvents = ''; widget.style.opacity = ''; }
       return;
     }
     barWrap.style.display = '';
@@ -746,53 +753,76 @@
     var subEl = document.getElementById('ut-sub');
     subEl.textContent = empty ? copy[currentLang].usageExhausted : '';
     box.classList.toggle('clickable', empty);
+    if (widget){
+      widget.style.pointerEvents = empty ? 'none' : '';
+      widget.style.opacity = empty ? '0.4' : '';
+    }
   }
 
-  function persistUsage(elapsedSeconds){
+  function flushUsageToFirestore(){
     if (!usageState || usageState.mode === 'unlimited') return;
-    var newUsed = usageState.usedSecondsAtStart + elapsedSeconds;
-    usageState.usedSecondsAtStart = newUsed;
-    usageState.usedSeconds = newUsed;
-    renderUsageTimer();
     var update = {};
     if (usageState.mode === 'demo'){
-      update.demoUsedSeconds = Math.min(newUsed, usageState.totalSeconds);
+      update.demoUsedSeconds = Math.min(usageState.usedSeconds, usageState.totalSeconds);
     } else {
-      update.planUsedSeconds = Math.min(newUsed, usageState.totalSeconds);
+      update.planUsedSeconds = Math.min(usageState.usedSeconds, usageState.totalSeconds);
       update.planOptionCode = usageState.optionCode;
     }
     db.collection('users').doc(usageState.uid).set(update, { merge: true }).catch(function(){});
+  }
+
+  function usageTick(){
+    if (!usageSessionActive) return;
+    var now = Date.now();
+    var elapsedSinceStart = Math.floor((now - usageSessionStartTs) / 1000);
+    usageState.usedSeconds = usageState.usedSecondsAtStart + elapsedSinceStart;
+    renderUsageTimer();
+    if (usageState.totalSeconds - usageState.usedSeconds <= 0){
+      endUsageSession();
+    }
+  }
+
+  function startUsageSession(){
+    if (!usageState || usageState.mode === 'unlimited') return;
+    if (usageSessionActive) return;
+    if (usageState.totalSeconds - usageState.usedSeconds <= 0){ renderUsageTimer(); return; }
+    usageSessionActive = true;
+    usageSessionStartTs = Date.now();
+    usageTickInterval = setInterval(usageTick, 1000);
+  }
+
+  function endUsageSession(){
+    if (usageTickInterval){ clearInterval(usageTickInterval); usageTickInterval = null; }
+    if (!usageSessionActive) return;
+    usageSessionActive = false;
+    usageState.usedSecondsAtStart = usageState.usedSeconds;
+    flushUsageToFirestore();
+    renderUsageTimer();
   }
 
   function wireUsageWidget(){
     var widget = document.getElementById('ai-coach-widget');
     if (!widget) return;
 
-    widget.addEventListener('conversationStarted', function(){
-      if (!usageState) return;
-      if (usageState.mode !== 'unlimited' && (usageState.totalSeconds - usageState.usedSeconds) <= 0){
-        widget.endConversation();
-        renderUsageTimer();
-        return;
+    // Any click landing inside the widget (its Shadow DOM included) starts the clock.
+    document.addEventListener('click', function(e){
+      if (!usageState || usageState.mode === 'unlimited') return;
+      var path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      if (path.indexOf(widget) !== -1){
+        startUsageSession();
       }
-      usageSessionStartTs = Date.now();
-      if (usageState.mode === 'unlimited') return;
-      usageTickInterval = setInterval(function(){
-        var elapsed = Math.floor((Date.now() - usageSessionStartTs) / 1000);
-        usageState.usedSeconds = usageState.usedSecondsAtStart + elapsed;
-        renderUsageTimer();
-        if (usageState.totalSeconds - usageState.usedSeconds <= 0){
-          widget.endConversation();
-        }
-      }, 1000);
     });
 
-    widget.addEventListener('conversationEnded', function(){
-      if (usageTickInterval){ clearInterval(usageTickInterval); usageTickInterval = null; }
-      if (!usageSessionStartTs || !usageState || usageState.mode === 'unlimited'){ usageSessionStartTs = null; return; }
-      var elapsedSeconds = Math.floor((Date.now() - usageSessionStartTs) / 1000);
-      usageSessionStartTs = null;
-      persistUsage(elapsedSeconds);
+    // Pause (and save) when the tab is hidden or the page is being left, so time
+    // isn't lost and doesn't keep counting while the visitor is elsewhere.
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) endUsageSession();
+    });
+    window.addEventListener('beforeunload', function(){
+      if (usageSessionActive) endUsageSession();
+    });
+    window.addEventListener('pagehide', function(){
+      if (usageSessionActive) endUsageSession();
     });
 
     document.getElementById('usage-timer').addEventListener('click', function(){
